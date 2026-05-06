@@ -90,11 +90,103 @@
     .pagination .page-link { color: #475569; background: #fff; font-weight: 500; border: 1px solid #e2e8f0; margin: 0 2px; border-radius: 4px; }
     .pagination .page-item.active .page-link { background-color: #0ea5e9; color: #fff; border-color: #0ea5e9; }
     .pagination .page-link:hover:not(.active) { background-color: #f1f5f9; }
+    .member-modal .modal-dialog { --bs-modal-width: 980px; }
+    .member-modal .modal-content { overflow: hidden; }
+    .member-profile {
+        background: linear-gradient(135deg, #991b1b, #1f2937);
+        color: #fff;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        padding: 22px;
+    }
+    .member-photo-lg {
+        background: rgba(255,255,255,0.12);
+        border: 4px solid rgba(255,255,255,0.35);
+        border-radius: 16px;
+        height: 132px;
+        object-fit: cover;
+        width: 132px;
+    }
+    .member-profile h4 { overflow-wrap: anywhere; }
+    .member-status-pill {
+        align-self: start;
+        border-radius: 999px;
+        font-weight: 700;
+        padding: 8px 12px;
+        white-space: nowrap;
+    }
+    .member-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .member-meta span {
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 999px;
+        font-size: 0.82rem;
+        padding: 7px 10px;
+    }
+    .member-detail-section {
+        padding: 22px;
+    }
+    .member-detail-title {
+        color: #0f172a;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        margin: 0 0 12px;
+        text-transform: uppercase;
+    }
+    .member-detail-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .member-detail-item {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        min-width: 0;
+        padding: 12px;
+    }
+    .member-detail-item.full { grid-column: 1 / -1; }
+    .member-detail-label {
+        color: #64748b;
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 800;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+    .member-detail-value {
+        color: #111827;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+    }
+    @media (max-width: 767.98px) {
+        .member-profile {
+            grid-template-columns: 1fr;
+            padding: 18px;
+            text-align: center;
+        }
+        .member-photo-lg {
+            height: 120px;
+            margin: 0 auto;
+            width: 120px;
+        }
+        .member-status-pill { justify-self: center; }
+        .member-meta { justify-content: center; }
+        .member-detail-section { padding: 16px; }
+        .member-detail-grid { grid-template-columns: 1fr; }
+    }
 </style>
 
 <!-- Member Details Modal -->
-<div class="modal fade" id="memberDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade member-modal" id="memberDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Member Details</h5>
@@ -115,37 +207,74 @@ function showMemberDetails(id) {
     const modal = new bootstrap.Modal(modalElement);
     document.getElementById('memberDetailsContent').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
     modal.show();
+
+    const escapeHtml = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    const display = (value) => {
+        if (value === null || value === undefined || value === '') return 'N/A';
+        return escapeHtml(value);
+    };
+
+    const detailItem = (label, value, full = false) => `
+        <div class="member-detail-item ${full ? 'full' : ''}">
+            <span class="member-detail-label">${escapeHtml(label)}</span>
+            <div class="member-detail-value">${display(value)}</div>
+        </div>
+    `;
     
     fetch(`<?= BASE_URL ?>/admin/members/view?id=${id}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 const member = data.data;
+                const fullName = `${member.fname || ''} ${member.lname || ''}`.trim() || 'Member';
+                const photoUrl = member.photo ? '<?= BASE_URL ?>/' + member.photo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(fullName);
+                const statusHtml = member.status == 1
+                    ? '<span class="member-status-pill bg-success">Approved</span>'
+                    : '<span class="member-status-pill bg-warning text-dark">Pending</span>';
                 let html = `
-                    <div class="row">
-                        <div class="col-md-4 text-center">
-                            <img src="${member.photo ? '<?= BASE_URL ?>/' + member.photo : 'https://ui-avatars.com/api/?name=' + member.fname + '+' + member.lname}" class="img-fluid rounded mb-3 shadow-sm" style="max-height: 200px; width: 100%; object-fit: cover;">
-                            <h5 class="fw-bold mb-0">${member.fname} ${member.lname}</h5>
-                            <p class="text-secondary small">Reg No: #${member.reg_no}</p>
-                            <div class="mt-3">
-                                ${member.status == 1 ? '<span class="badge bg-success">Approved</span>' : '<span class="badge bg-warning text-dark">Pending</span>'}
+                    <div class="member-profile">
+                        <img src="${escapeHtml(photoUrl)}" class="member-photo-lg shadow-sm" alt="${escapeHtml(fullName)}">
+                        <div>
+                            <div class="small text-white-50 fw-bold text-uppercase mb-1">Registration #${display(member.reg_no)}</div>
+                            <h4 class="fw-bold mb-1">${escapeHtml(fullName)}</h4>
+                            <div class="text-white-50">${display(member.membership)}</div>
+                            <div class="member-meta">
+                                <span><i class="fas fa-phone me-1"></i>${display(member.mobile)}</span>
+                                <span><i class="fas fa-map-marker-alt me-1"></i>${display(member.district_name || member.district)}</span>
+                                <span><i class="fas fa-id-card me-1"></i>${display(member.gender)}</span>
                             </div>
                         </div>
-                        <div class="col-md-8">
-                            <table class="table table-sm table-borderless">
-                                <tr><th width="40%">Father/Husband:</th><td>${member.fathername || 'N/A'}</td></tr>
-                                <tr><th>Email:</th><td>${member.email || 'N/A'}</td></tr>
-                                <tr><th>Mobile:</th><td>${member.mobile}</td></tr>
-                                <tr><th>DOB:</th><td>${member.dateofbirth}</td></tr>
-                                <tr><th>Gender:</th><td>${member.gender}</td></tr>
-                                <tr><th>District:</th><td>${member.district_name || member.district}</td></tr>
-                                <tr><th>Assembly:</th><td>${member.assembly_name || member.assembly}</td></tr>
-                                <tr><th>Local Body:</th><td>${member.local_body_name || member.local_body}</td></tr>
-                                <tr><th>Address:</th><td>${member.address || member.perm_address}</td></tr>
-                                <tr><th>Blood Group:</th><td>${member.blood || 'N/A'}</td></tr>
-                                <tr><th>Reference:</th><td>${member.reference || 'N/A'}</td></tr>
-                                <tr><th>Membership Area:</th><td>${member.membership}</td></tr>
-                            </table>
+                        ${statusHtml}
+                    </div>
+                    <div class="member-detail-section">
+                        <h6 class="member-detail-title">Personal Information</h6>
+                        <div class="member-detail-grid mb-4">
+                            ${detailItem('Father / Guardian', member.fathername)}
+                            ${detailItem('Date of Birth', member.dateofbirth)}
+                            ${detailItem('Gender', member.gender)}
+                            ${detailItem('Blood Group', member.blood)}
+                            ${detailItem('Email', member.email)}
+                            ${detailItem('Mobile', member.mobile)}
+                            ${detailItem('Aadhaar', member.aadhaar)}
+                            ${detailItem('Reference', member.reference)}
+                            ${detailItem('Address', member.address || member.perm_address, true)}
+                        </div>
+
+                        <h6 class="member-detail-title">Membership & Location</h6>
+                        <div class="member-detail-grid">
+                            ${detailItem('Membership Area', member.membership)}
+                            ${detailItem('District', member.district_name || member.district)}
+                            ${detailItem('Assembly', member.assembly_name || member.assembly)}
+                            ${detailItem('Local Body', member.local_body_name || member.local_body)}
+                            ${detailItem('Ward', member.ward)}
+                            ${detailItem('President', member.president)}
+                            ${detailItem('Secretary', member.secretary)}
                         </div>
                     </div>
                 `;
