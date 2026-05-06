@@ -1,10 +1,13 @@
 <div class="card p-4">
     <div class="admin-toolbar mb-4">
         <h5 class="fw-bold m-0">Member Registrations</h5>
-        <div class="admin-filters">
-            <input type="text" class="form-control form-control-sm" placeholder="Search...">
-            <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-filter"></i> Filter</button>
-        </div>
+        <form action="<?= BASE_URL ?>/admin/members" method="GET" class="admin-filters">
+            <input type="text" name="q" class="form-control form-control-sm" placeholder="Search name, reg no, phone..." value="<?= htmlspecialchars($search ?? '') ?>">
+            <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="fas fa-search"></i> Search</button>
+            <?php if (!empty($search)): ?>
+                <a href="<?= BASE_URL ?>/admin/members" class="btn btn-light btn-sm">Clear</a>
+            <?php endif; ?>
+        </form>
     </div>
     
     <div class="table-responsive mobile-cards">
@@ -77,28 +80,7 @@
         </table>
     </div>
 
-    <?php if ($totalPages > 1): ?>
-    <div class="admin-toolbar mt-4">
-        <div class="text-muted small">
-            Showing <?= (($currentPage - 1) * 10) + 1 ?> to <?= min($currentPage * 10, $totalMembers) ?> of <?= $totalMembers ?> entries
-        </div>
-        <nav aria-label="Page navigation">
-            <ul class="pagination pagination-sm m-0 shadow-sm">
-                <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
-                    <a class="page-link border-0 px-3" href="?page=<?= $currentPage - 1 ?>" tabindex="-1">Previous</a>
-                </li>
-                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                    <li class="page-item <?= ($i == $currentPage) ? 'active' : '' ?>">
-                        <a class="page-link border-0 px-3" href="?page=<?= $i ?>"><?= $i ?></a>
-                    </li>
-                <?php endfor; ?>
-                <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
-                    <a class="page-link border-0 px-3" href="?page=<?= $currentPage + 1 ?>">Next</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-    <?php endif; ?>
+    <?php render_admin_pagination($currentPage ?? 1, $totalItems ?? 0, $perPage ?? 10); ?>
 </div>
 
 <style>

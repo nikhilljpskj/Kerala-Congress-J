@@ -19,16 +19,29 @@ class ContentController extends Controller {
         $contentModel = new Content();
         $type = $_GET['type'] ?? null;
         $category = $_GET['category'] ?? null;
+        $search = trim($_GET['q'] ?? '');
+        $limit = 10;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $offset = ($page - 1) * $limit;
         
-        $items = $contentModel->getAll($type, $category, 1);
-        $items_draft = $contentModel->getAll($type, $category, 0);
+        $totalItems = $contentModel->countAll($type, $category, $search);
+        $totalPages = max(1, (int)ceil($totalItems / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $offset = ($page - 1) * $limit;
+        }
+        $items = $contentModel->getPaginated($type, $category, $search, $offset, $limit);
         
         return $this->view('admin/layout', [
             'pageTitle' => 'Content Management',
             'contentPath' => VIEWS_PATH . '/admin/content.php',
-            'items' => array_merge($items, $items_draft),
+            'items' => $items,
             'type' => $type,
-            'category' => $category
+            'category' => $category,
+            'search' => $search,
+            'currentPage' => $page,
+            'totalItems' => $totalItems,
+            'perPage' => $limit
         ]);
     }
 
@@ -99,13 +112,27 @@ class ContentController extends Controller {
     public function gallery() {
         $galleryModel = new Gallery();
         $category = $_GET['category'] ?? null;
-        $items = $galleryModel->getAll($category);
+        $search = trim($_GET['q'] ?? '');
+        $limit = 12;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $offset = ($page - 1) * $limit;
+        $totalItems = $galleryModel->countAll($category, $search);
+        $totalPages = max(1, (int)ceil($totalItems / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $offset = ($page - 1) * $limit;
+        }
+        $items = $galleryModel->getPaginated($category, $search, $offset, $limit);
         
         return $this->view('admin/layout', [
             'pageTitle' => 'Gallery Management',
             'contentPath' => VIEWS_PATH . '/admin/gallery.php',
             'items' => $items,
-            'category' => $category
+            'category' => $category,
+            'search' => $search,
+            'currentPage' => $page,
+            'totalItems' => $totalItems,
+            'perPage' => $limit
         ]);
     }
 

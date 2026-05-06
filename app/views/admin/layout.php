@@ -10,6 +10,60 @@ function can($perm, $roles, $permissions) {
     if (in_array('super_admin', $roles)) return true;
     return in_array($perm, $permissions);
 }
+
+function admin_page_url($page, $overrides = []) {
+    $params = array_merge($_GET, $overrides, ['page' => $page]);
+    foreach ($params as $key => $value) {
+        if ($value === null || $value === '') {
+            unset($params[$key]);
+        }
+    }
+    $query = http_build_query($params);
+    return $query ? '?' . $query : '?page=' . (int)$page;
+}
+
+function render_admin_pagination($currentPage, $totalItems, $perPage) {
+    $totalPages = max(1, (int)ceil($totalItems / $perPage));
+    if ($totalPages <= 1 && $totalItems <= $perPage) {
+        return;
+    }
+
+    $currentPage = max(1, min((int)$currentPage, $totalPages));
+    $from = $totalItems > 0 ? (($currentPage - 1) * $perPage) + 1 : 0;
+    $to = min($currentPage * $perPage, $totalItems);
+    $start = max(1, $currentPage - 2);
+    $end = min($totalPages, $currentPage + 2);
+    ?>
+    <div class="admin-toolbar mt-4">
+        <div class="text-muted small">
+            Showing <?= number_format($from) ?> to <?= number_format($to) ?> of <?= number_format($totalItems) ?> entries
+        </div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm m-0 shadow-sm">
+                <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
+                    <a class="page-link border-0 px-3" href="<?= admin_page_url($currentPage - 1) ?>" tabindex="-1">Previous</a>
+                </li>
+                <?php if ($start > 1): ?>
+                    <li class="page-item"><a class="page-link border-0 px-3" href="<?= admin_page_url(1) ?>">1</a></li>
+                    <?php if ($start > 2): ?><li class="page-item disabled"><span class="page-link border-0 px-3">...</span></li><?php endif; ?>
+                <?php endif; ?>
+                <?php for ($i = $start; $i <= $end; $i++): ?>
+                    <li class="page-item <?= ($i == $currentPage) ? 'active' : '' ?>">
+                        <a class="page-link border-0 px-3" href="<?= admin_page_url($i) ?>"><?= $i ?></a>
+                    </li>
+                <?php endfor; ?>
+                <?php if ($end < $totalPages): ?>
+                    <?php if ($end < $totalPages - 1): ?><li class="page-item disabled"><span class="page-link border-0 px-3">...</span></li><?php endif; ?>
+                    <li class="page-item"><a class="page-link border-0 px-3" href="<?= admin_page_url($totalPages) ?>"><?= $totalPages ?></a></li>
+                <?php endif; ?>
+                <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
+                    <a class="page-link border-0 px-3" href="<?= admin_page_url($currentPage + 1) ?>">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <?php
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

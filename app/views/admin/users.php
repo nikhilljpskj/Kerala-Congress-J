@@ -1,6 +1,13 @@
 <div class="card p-4">
     <div class="admin-toolbar mb-4">
         <h5 class="fw-bold m-0">District Authorities</h5>
+        <form action="<?= BASE_URL ?>/admin/users" method="GET" class="admin-filters">
+            <input type="text" name="q" class="form-control form-control-sm" placeholder="Search name, email, phone..." value="<?= htmlspecialchars($search ?? '') ?>">
+            <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="fas fa-search"></i> Search</button>
+            <?php if (!empty($search)): ?>
+                <a href="<?= BASE_URL ?>/admin/users" class="btn btn-light btn-sm">Clear</a>
+            <?php endif; ?>
+        </form>
         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDistrictAdminModal"><i class="fas fa-plus"></i> Add New District Admin</button>
     </div>
     
@@ -62,6 +69,7 @@
             </tbody>
         </table>
     </div>
+    <?php render_admin_pagination($currentPage ?? 1, $totalItems ?? 0, $perPage ?? 10); ?>
 </div>
 
 <!-- Add Modal -->

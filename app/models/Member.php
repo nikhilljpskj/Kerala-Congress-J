@@ -30,8 +30,20 @@ class Member {
     /**
      * Get paginated members
      */
-    public function getMembersPaginated($offset, $limit, $districtId = null) {
-        $where = $districtId ? "WHERE m.district_id = :district_id" : "";
+    public function getMembersPaginated($offset, $limit, $districtId = null, $search = '') {
+        $conditions = [];
+        $params = [];
+
+        if ($districtId) {
+            $conditions[] = "m.district_id = :district_id";
+            $params[':district_id'] = [(int)$districtId, PDO::PARAM_INT];
+        }
+        if ($search !== '') {
+            $conditions[] = "(m.reg_no LIKE :search OR m.fname LIKE :search OR m.lname LIKE :search OR CONCAT(m.fname, ' ', m.lname) LIKE :search OR m.email LIKE :search OR m.mobile LIKE :search OR m.membership LIKE :search OR d.name LIKE :search)";
+            $params[':search'] = ['%' . $search . '%', PDO::PARAM_STR];
+        }
+
+        $where = $conditions ? "WHERE " . implode(" AND ", $conditions) : "";
         $sql = "SELECT m.*, d.name AS district_name, a.name AS assembly_name, lb.name AS local_body_name 
                 FROM members m
                 LEFT JOIN districts d ON m.district_id = d.id
@@ -42,8 +54,8 @@ class Member {
                 LIMIT :offset, :limit";
         
         $stmt = $this->pdo->prepare($sql);
-        if ($districtId) {
-            $stmt->bindValue(':district_id', $districtId, PDO::PARAM_INT);
+        foreach ($params as $name => [$value, $type]) {
+            $stmt->bindValue($name, $value, $type);
         }
         $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
         $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
@@ -54,15 +66,29 @@ class Member {
     /**
      * Get total member count for pagination
      */
-    public function getTotalMemberCount($districtId = null) {
-        $where = $districtId ? "WHERE district_id = :district_id" : "";
-        $sql = "SELECT COUNT(*) FROM members $where";
-        $stmt = $this->pdo->prepare($sql);
+    public function getTotalMemberCount($districtId = null, $search = '') {
+        $conditions = [];
+        $params = [];
+
         if ($districtId) {
-            $stmt->execute(['district_id' => $districtId]);
-        } else {
-            $stmt->execute();
+            $conditions[] = "m.district_id = :district_id";
+            $params[':district_id'] = [(int)$districtId, PDO::PARAM_INT];
         }
+        if ($search !== '') {
+            $conditions[] = "(m.reg_no LIKE :search OR m.fname LIKE :search OR m.lname LIKE :search OR CONCAT(m.fname, ' ', m.lname) LIKE :search OR m.email LIKE :search OR m.mobile LIKE :search OR m.membership LIKE :search OR d.name LIKE :search)";
+            $params[':search'] = ['%' . $search . '%', PDO::PARAM_STR];
+        }
+
+        $where = $conditions ? "WHERE " . implode(" AND ", $conditions) : "";
+        $sql = "SELECT COUNT(*)
+                FROM members m
+                LEFT JOIN districts d ON m.district_id = d.id
+                $where";
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $name => [$value, $type]) {
+            $stmt->bindValue($name, $value, $type);
+        }
+        $stmt->execute();
         return $stmt->fetchColumn();
     }
 

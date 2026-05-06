@@ -40,8 +40,18 @@ class AdminController extends Controller {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }
         
         $userModel = new User();
-        // Since we are managing district authorities, we fetch them
-        $districtAdmins = $userModel->getUsersByRole('district_admin');
+        $limit = 10;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $search = trim($_GET['q'] ?? '');
+        $offset = ($page - 1) * $limit;
+        $totalUsers = $userModel->countUsersByRole('district_admin', $search);
+        $totalPages = max(1, (int)ceil($totalUsers / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $offset = ($page - 1) * $limit;
+        }
+
+        $districtAdmins = $userModel->getUsersByRolePaginated('district_admin', $search, $offset, $limit);
         
         $locationModel = new Location();
         $districts = $locationModel->getDistricts();
@@ -50,7 +60,11 @@ class AdminController extends Controller {
             'pageTitle' => 'District Authorities',
             'contentPath' => VIEWS_PATH . '/admin/users.php',
             'users' => $districtAdmins,
-            'districts' => $districts
+            'districts' => $districts,
+            'search' => $search,
+            'currentPage' => $page,
+            'totalItems' => $totalUsers,
+            'perPage' => $limit
         ]);
     }
 
@@ -190,8 +204,8 @@ class AdminController extends Controller {
         
         $memberModel = new Member();
         $limit = 10;
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        if ($page < 1) $page = 1;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $search = trim($_GET['q'] ?? '');
         $offset = ($page - 1) * $limit;
         
         $districtId = null;
@@ -201,17 +215,24 @@ class AdminController extends Controller {
             $districtId = $user['district_id'] ?? null;
         }
 
-        $members = $memberModel->getMembersPaginated($offset, $limit, $districtId);
-        $totalMembers = $memberModel->getTotalMemberCount($districtId);
-        $totalPages = ceil($totalMembers / $limit);
+        $totalMembers = $memberModel->getTotalMemberCount($districtId, $search);
+        $totalPages = max(1, (int)ceil($totalMembers / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $offset = ($page - 1) * $limit;
+        }
+        $members = $memberModel->getMembersPaginated($offset, $limit, $districtId, $search);
 
         return $this->view('admin/layout', [
             'pageTitle' => 'Member Registrations',
             'contentPath' => VIEWS_PATH . '/admin/members.php',
             'members' => $members,
+            'search' => $search,
             'currentPage' => $page,
             'totalPages' => $totalPages,
-            'totalMembers' => $totalMembers
+            'totalMembers' => $totalMembers,
+            'totalItems' => $totalMembers,
+            'perPage' => $limit
         ]);
     }
 
@@ -295,6 +316,10 @@ class AdminController extends Controller {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }
         
         $contactModel = new \app\models\Contact();
+        $limit = 10;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $search = trim($_GET['q'] ?? '');
+        $offset = ($page - 1) * $limit;
         $districtId = null;
         if (!in_array('super_admin', $_SESSION['roles'])) {
             $userModel = new User();
@@ -302,12 +327,22 @@ class AdminController extends Controller {
             $districtId = $user['district_id'] ?? null;
         }
 
-        $inquiries = $contactModel->getInquiries($districtId);
+        $totalInquiries = $contactModel->countInquiries($districtId, $search);
+        $totalPages = max(1, (int)ceil($totalInquiries / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $offset = ($page - 1) * $limit;
+        }
+        $inquiries = $contactModel->getInquiries($districtId, $search, $offset, $limit);
 
         return $this->view('admin/layout', [
             'pageTitle' => 'Contact Inquiries',
             'contentPath' => VIEWS_PATH . '/admin/contacts.php',
-            'inquiries' => $inquiries
+            'inquiries' => $inquiries,
+            'search' => $search,
+            'currentPage' => $page,
+            'totalItems' => $totalInquiries,
+            'perPage' => $limit
         ]);
     }
 

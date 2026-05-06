@@ -40,6 +40,62 @@ class Content {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getPaginated($type = null, $category = null, $search = '', $offset = 0, $limit = 10) {
+        $conditions = [];
+        $params = [];
+
+        if ($type) {
+            $conditions[] = "type = :type";
+            $params[':type'] = [$type, PDO::PARAM_STR];
+        }
+        if ($category) {
+            $conditions[] = "category = :category";
+            $params[':category'] = [$category, PDO::PARAM_STR];
+        }
+        if ($search !== '') {
+            $conditions[] = "(title LIKE :search OR body LIKE :search OR type LIKE :search OR category LIKE :search)";
+            $params[':search'] = ['%' . $search . '%', PDO::PARAM_STR];
+        }
+
+        $where = $conditions ? "WHERE " . implode(" AND ", $conditions) : "";
+        $query = "SELECT * FROM " . $this->table . " $where ORDER BY created_at DESC LIMIT :offset, :limit";
+        $stmt = $this->conn->prepare($query);
+        foreach ($params as $name => [$value, $type]) {
+            $stmt->bindValue($name, $value, $type);
+        }
+        $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function countAll($type = null, $category = null, $search = '') {
+        $conditions = [];
+        $params = [];
+
+        if ($type) {
+            $conditions[] = "type = :type";
+            $params[':type'] = [$type, PDO::PARAM_STR];
+        }
+        if ($category) {
+            $conditions[] = "category = :category";
+            $params[':category'] = [$category, PDO::PARAM_STR];
+        }
+        if ($search !== '') {
+            $conditions[] = "(title LIKE :search OR body LIKE :search OR type LIKE :search OR category LIKE :search)";
+            $params[':search'] = ['%' . $search . '%', PDO::PARAM_STR];
+        }
+
+        $where = $conditions ? "WHERE " . implode(" AND ", $conditions) : "";
+        $query = "SELECT COUNT(*) FROM " . $this->table . " $where";
+        $stmt = $this->conn->prepare($query);
+        foreach ($params as $name => [$value, $type]) {
+            $stmt->bindValue($name, $value, $type);
+        }
+        $stmt->execute();
+        return (int)$stmt->fetchColumn();
+    }
+
     public function getById($id) {
         $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);

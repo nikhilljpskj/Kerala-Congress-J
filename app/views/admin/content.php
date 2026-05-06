@@ -16,8 +16,9 @@
     <div class="col-md-12">
         <div class="card p-4 border-0 shadow-sm overflow-hidden">
             <div class="row g-3 mb-4">
-                <div class="col-12 col-xl-8">
+                <div class="col-12 col-xl-9">
                     <form action="<?= BASE_URL ?>/admin/content" method="GET" class="admin-filters">
+                        <input type="text" name="q" class="form-control shadow-sm" placeholder="Search title or body..." value="<?= htmlspecialchars($search ?? '') ?>" style="border: none; background: #f8fafc;">
                         <select name="category" class="form-select shadow-sm" style="border: none; background: #f8fafc;">
                             <option value="">All Categories</option>
                             <option value="main" <?= ($category ?? '') == 'main' ? 'selected' : '' ?>>Main Site</option>
@@ -31,6 +32,9 @@
                             <option value="event" <?= ($type ?? '') == 'event' ? 'selected' : '' ?>>Event</option>
                         </select>
                         <button type="submit" class="btn btn-light px-4 shadow-sm">Filter</button>
+                        <?php if (!empty($search) || !empty($category) || !empty($type)): ?>
+                            <a href="<?= BASE_URL ?>/admin/content" class="btn btn-light px-4 shadow-sm">Clear</a>
+                        <?php endif; ?>
                     </form>
                 </div>
             </div>
@@ -99,6 +103,8 @@
                     </tbody>
                 </table>
             </div>
+
+            <?php render_admin_pagination($currentPage ?? 1, $totalItems ?? 0, $perPage ?? 10); ?>
         </div>
     </div>
 </div>

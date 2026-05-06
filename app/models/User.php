@@ -50,6 +50,46 @@ class User {
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public function getUsersByRolePaginated($roleSlug, $search = '', $offset = 0, $limit = 10) {
+        $searchSql = $search !== '' ? " AND (u.name LIKE :search OR u.email LIKE :search OR u.phone LIKE :search OR d.name LIKE :search)" : "";
+        $sql = "SELECT u.*, d.name AS district 
+                FROM users u
+                JOIN user_roles ur ON u.id = ur.user_id
+                JOIN roles r ON ur.role_id = r.id
+                LEFT JOIN districts d ON u.district_id = d.id
+                WHERE r.slug = :role_slug
+                $searchSql
+                ORDER BY u.id DESC
+                LIMIT :offset, :limit";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':role_slug', $roleSlug, \PDO::PARAM_STR);
+        if ($search !== '') {
+            $stmt->bindValue(':search', '%' . $search . '%', \PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', (int)$limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public function countUsersByRole($roleSlug, $search = '') {
+        $searchSql = $search !== '' ? " AND (u.name LIKE :search OR u.email LIKE :search OR u.phone LIKE :search OR d.name LIKE :search)" : "";
+        $sql = "SELECT COUNT(*)
+                FROM users u
+                JOIN user_roles ur ON u.id = ur.user_id
+                JOIN roles r ON ur.role_id = r.id
+                LEFT JOIN districts d ON u.district_id = d.id
+                WHERE r.slug = :role_slug
+                $searchSql";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':role_slug', $roleSlug, \PDO::PARAM_STR);
+        if ($search !== '') {
+            $stmt->bindValue(':search', '%' . $search . '%', \PDO::PARAM_STR);
+        }
+        $stmt->execute();
+        return (int)$stmt->fetchColumn();
+    }
+
     public function createUser($name, $email, $phone, $password, $district_id, $roleSlug) {
         try {
             $this->pdo->beginTransaction();

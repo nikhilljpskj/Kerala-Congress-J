@@ -34,6 +34,54 @@ class Gallery {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getPaginated($category = null, $search = '', $offset = 0, $limit = 12, $status = 1) {
+        $conditions = ["status = :status"];
+        $params = [':status' => [(int)$status, PDO::PARAM_INT]];
+
+        if ($category) {
+            $conditions[] = "category = :category";
+            $params[':category'] = [$category, PDO::PARAM_STR];
+        }
+        if ($search !== '') {
+            $conditions[] = "(title LIKE :search OR category LIKE :search OR image_path LIKE :search)";
+            $params[':search'] = ['%' . $search . '%', PDO::PARAM_STR];
+        }
+
+        $where = "WHERE " . implode(" AND ", $conditions);
+        $query = "SELECT * FROM " . $this->table . " $where ORDER BY created_at DESC LIMIT :offset, :limit";
+        $stmt = $this->conn->prepare($query);
+        foreach ($params as $name => [$value, $type]) {
+            $stmt->bindValue($name, $value, $type);
+        }
+        $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function countAll($category = null, $search = '', $status = 1) {
+        $conditions = ["status = :status"];
+        $params = [':status' => [(int)$status, PDO::PARAM_INT]];
+
+        if ($category) {
+            $conditions[] = "category = :category";
+            $params[':category'] = [$category, PDO::PARAM_STR];
+        }
+        if ($search !== '') {
+            $conditions[] = "(title LIKE :search OR category LIKE :search OR image_path LIKE :search)";
+            $params[':search'] = ['%' . $search . '%', PDO::PARAM_STR];
+        }
+
+        $where = "WHERE " . implode(" AND ", $conditions);
+        $query = "SELECT COUNT(*) FROM " . $this->table . " $where";
+        $stmt = $this->conn->prepare($query);
+        foreach ($params as $name => [$value, $type]) {
+            $stmt->bindValue($name, $value, $type);
+        }
+        $stmt->execute();
+        return (int)$stmt->fetchColumn();
+    }
+
     public function getById($id) {
         $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);

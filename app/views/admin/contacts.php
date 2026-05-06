@@ -2,7 +2,14 @@
     <div class="card-body p-4">
         <div class="admin-toolbar mb-4">
             <h5 class="fw-bold m-0">Contact Inquiries</h5>
-            <span class="badge bg-primary rounded-pill"><?= count($inquiries) ?> Total</span>
+            <form action="<?= BASE_URL ?>/admin/contacts" method="GET" class="admin-filters">
+                <input type="text" name="q" class="form-control form-control-sm" placeholder="Search name, mobile, email..." value="<?= htmlspecialchars($search ?? '') ?>">
+                <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="fas fa-search"></i> Search</button>
+                <?php if (!empty($search)): ?>
+                    <a href="<?= BASE_URL ?>/admin/contacts" class="btn btn-light btn-sm">Clear</a>
+                <?php endif; ?>
+            </form>
+            <span class="badge bg-primary rounded-pill"><?= number_format($totalItems ?? count($inquiries)) ?> Total</span>
         </div>
 
         <div class="table-responsive mobile-cards">
@@ -47,6 +54,7 @@
                 </tbody>
             </table>
         </div>
+        <?php render_admin_pagination($currentPage ?? 1, $totalItems ?? 0, $perPage ?? 10); ?>
     </div>
 </div>
 
