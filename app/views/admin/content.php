@@ -17,29 +17,32 @@
         <div class="card p-4 border-0 shadow-sm overflow-hidden">
             <div class="row g-3 mb-4">
                 <div class="col-12 col-xl-9">
-                    <form action="<?= BASE_URL ?>/admin/content" method="GET" class="admin-filters">
-                        <input type="text" name="q" class="form-control shadow-sm" placeholder="Search title or body..." value="<?= htmlspecialchars($search ?? '') ?>" style="border: none; background: #f8fafc;">
-                        <select name="category" class="form-select shadow-sm" style="border: none; background: #f8fafc;">
+                    <form action="<?= BASE_URL ?>/admin/content" method="GET" class="admin-search admin-search-wide">
+                        <div class="admin-search-field">
+                            <i class="fas fa-search"></i>
+                            <input type="text" name="q" class="form-control" placeholder="Search title or body..." value="<?= htmlspecialchars($search ?? '') ?>">
+                        </div>
+                        <select name="category" class="form-select">
                             <option value="">All Categories</option>
                             <option value="main" <?= ($category ?? '') == 'main' ? 'selected' : '' ?>>Main Site</option>
                             <option value="kyf" <?= ($category ?? '') == 'kyf' ? 'selected' : '' ?>>KYF</option>
                             <option value="kitproc" <?= ($category ?? '') == 'kitproc' ? 'selected' : '' ?>>KITPROC</option>
                         </select>
-                        <select name="type" class="form-select shadow-sm" style="border: none; background: #f8fafc;">
+                        <select name="type" class="form-select">
                             <option value="">All Types</option>
                             <option value="news" <?= ($type ?? '') == 'news' ? 'selected' : '' ?>>News</option>
                             <option value="update" <?= ($type ?? '') == 'update' ? 'selected' : '' ?>>Update</option>
                             <option value="event" <?= ($type ?? '') == 'event' ? 'selected' : '' ?>>Event</option>
                         </select>
-                        <button type="submit" class="btn btn-light px-4 shadow-sm">Filter</button>
+                        <button type="submit" class="btn btn-primary px-4">Search</button>
                         <?php if (!empty($search) || !empty($category) || !empty($type)): ?>
-                            <a href="<?= BASE_URL ?>/admin/content" class="btn btn-light px-4 shadow-sm">Clear</a>
+                            <a href="<?= BASE_URL ?>/admin/content" class="btn btn-light px-4">Clear</a>
                         <?php endif; ?>
                     </form>
                 </div>
             </div>
 
-            <div class="table-responsive mobile-cards">
+            <div class="table-responsive mobile-cards admin-table-wrap">
                 <table class="table table-hover align-middle">
                     <thead style="background: #f8fafc;">
                         <tr class="text-uppercase small fw-bold text-muted" style="letter-spacing: 1px;">

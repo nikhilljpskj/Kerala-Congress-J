@@ -6,14 +6,17 @@
                     <h5 class="fw-bold m-0">Gallery Management</h5>
                     <p class="text-muted small m-0">Manage photo galleries across all sections.</p>
                 </div>
-                <form action="<?= BASE_URL ?>/admin/gallery" method="GET" class="admin-filters">
+                <form action="<?= BASE_URL ?>/admin/gallery" method="GET" class="admin-search">
                     <?php if (!empty($category)): ?>
                         <input type="hidden" name="category" value="<?= htmlspecialchars($category) ?>">
                     <?php endif; ?>
-                    <input type="text" name="q" class="form-control form-control-sm" placeholder="Search images..." value="<?= htmlspecialchars($search ?? '') ?>">
-                    <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="fas fa-search"></i> Search</button>
+                    <div class="admin-search-field">
+                        <i class="fas fa-search"></i>
+                        <input type="text" name="q" class="form-control" placeholder="Search images..." value="<?= htmlspecialchars($search ?? '') ?>">
+                    </div>
+                    <button class="btn btn-primary" type="submit">Search</button>
                     <?php if (!empty($search)): ?>
-                        <a href="<?= BASE_URL ?>/admin/gallery<?= !empty($category) ? '?category=' . urlencode($category) : '' ?>" class="btn btn-light btn-sm">Clear</a>
+                        <a href="<?= BASE_URL ?>/admin/gallery<?= !empty($category) ? '?category=' . urlencode($category) : '' ?>" class="btn btn-light">Clear</a>
                     <?php endif; ?>
                 </form>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGalleryModal">

@@ -1,16 +1,19 @@
 <div class="card p-4">
     <div class="admin-toolbar mb-4">
         <h5 class="fw-bold m-0">Member Registrations</h5>
-        <form action="<?= BASE_URL ?>/admin/members" method="GET" class="admin-filters">
-            <input type="text" name="q" class="form-control form-control-sm" placeholder="Search name, reg no, phone..." value="<?= htmlspecialchars($search ?? '') ?>">
-            <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="fas fa-search"></i> Search</button>
+        <form action="<?= BASE_URL ?>/admin/members" method="GET" class="admin-search">
+            <div class="admin-search-field">
+                <i class="fas fa-search"></i>
+                <input type="text" name="q" class="form-control" placeholder="Search name, reg no, phone..." value="<?= htmlspecialchars($search ?? '') ?>">
+            </div>
+            <button class="btn btn-primary" type="submit">Search</button>
             <?php if (!empty($search)): ?>
-                <a href="<?= BASE_URL ?>/admin/members" class="btn btn-light btn-sm">Clear</a>
+                <a href="<?= BASE_URL ?>/admin/members" class="btn btn-light">Clear</a>
             <?php endif; ?>
         </form>
     </div>
     
-    <div class="table-responsive mobile-cards">
+    <div class="table-responsive mobile-cards admin-table-wrap">
         <table class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>

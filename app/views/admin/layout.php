@@ -200,14 +200,56 @@ function render_admin_pagination($currentPage, $totalItems, $perPage) {
             flex-wrap: wrap;
         }
         .admin-filters > * { flex: 1 1 160px; min-width: 0; }
+        .admin-search {
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) auto auto;
+            align-items: center;
+            gap: 10px;
+            width: min(100%, 720px);
+        }
+        .admin-search.admin-search-wide {
+            grid-template-columns: minmax(240px, 1.4fr) minmax(150px, 0.8fr) minmax(150px, 0.8fr) auto auto;
+            width: min(100%, 980px);
+        }
+        .admin-search-field {
+            position: relative;
+            min-width: 0;
+        }
+        .admin-search-field i {
+            color: var(--muted);
+            left: 14px;
+            pointer-events: none;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .admin-search-field .form-control {
+            border: 1px solid var(--border);
+            box-shadow: none;
+            min-height: 42px;
+            padding-left: 40px;
+        }
+        .admin-search .form-control:focus,
+        .admin-search .form-select:focus {
+            border-color: rgba(198, 40, 40, 0.45);
+            box-shadow: 0 0 0 0.2rem rgba(198, 40, 40, 0.08);
+        }
+        .admin-search .btn {
+            white-space: nowrap;
+        }
         .table-responsive {
             border: 1px solid var(--border);
             border-radius: 8px;
             background: #fff;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
+        .table-responsive::-webkit-scrollbar { height: 8px; }
+        .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
         .table {
             margin-bottom: 0;
             --bs-table-hover-bg: #f8fafc;
+            min-width: 760px;
         }
         .table thead th {
             border-bottom: 1px solid var(--border);
@@ -269,6 +311,11 @@ function render_admin_pagination($currentPage, $totalItems, $perPage) {
                 flex-direction: column;
                 width: 100%;
             }
+            .admin-search,
+            .admin-search.admin-search-wide {
+                grid-template-columns: 1fr;
+                width: 100%;
+            }
             .admin-page-header .btn,
             .admin-toolbar .btn,
             .admin-actions .btn,
@@ -278,55 +325,10 @@ function render_admin_pagination($currentPage, $totalItems, $perPage) {
                 width: 100% !important;
             }
             .table-responsive.mobile-cards {
-                border: 0;
-                background: transparent;
-                overflow: visible;
-            }
-            .mobile-cards table,
-            .mobile-cards thead,
-            .mobile-cards tbody,
-            .mobile-cards tr,
-            .mobile-cards th,
-            .mobile-cards td {
-                display: block;
-                width: 100%;
-            }
-            .mobile-cards thead { display: none; }
-            .mobile-cards tr {
                 border: 1px solid var(--border);
                 border-radius: 8px;
                 background: #fff;
-                margin-bottom: 12px;
-                padding: 12px;
-                box-shadow: var(--shadow-sm);
-            }
-            .mobile-cards td {
-                border: 0;
-                padding: 8px 0;
-            }
-            .mobile-cards td::before {
-                content: attr(data-label);
-                display: block;
-                color: var(--muted);
-                font-size: 0.72rem;
-                font-weight: 700;
-                text-transform: uppercase;
-                margin-bottom: 3px;
-            }
-            .mobile-cards td[colspan]::before { display: none; }
-            .mobile-cards td[data-label="Actions"]::before { margin-bottom: 8px; }
-            .mobile-cards td.text-end { text-align: left !important; }
-            .mobile-cards .btn-group,
-            .mobile-cards td[data-label="Actions"] {
-                display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
-            }
-            .mobile-cards .btn-group .btn,
-            .mobile-cards td[data-label="Actions"] > .btn,
-            .mobile-cards td[data-label="Actions"] > a {
-                width: 40px;
-                height: 38px;
+                overflow-x: auto;
             }
             .pagination {
                 flex-wrap: wrap;
