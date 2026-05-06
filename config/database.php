@@ -4,8 +4,8 @@ namespace config;
 
 class Database {
     private $host = "localhost";
-    private $user = "kerala_congress1"; // or "root" in local depending on connect.php
-    private $password = "kerala_congress"; // or "" locally
+    private $user = "root"; // or "root" in local depending on connect.php
+    private $password = ""; // or "" locally
     private $dbname = "kerala_congress";
 
     private $conn;

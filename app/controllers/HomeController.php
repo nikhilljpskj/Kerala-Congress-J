@@ -172,20 +172,35 @@ class HomeController extends Controller {
                 $row = $stmt->fetch();
             } while ($row['count'] > 0);
 
-            // Handle file upload
+            // Handle mandatory photo upload
             $targetFile = "";
-            if(!empty($_FILES['photo']['name'])) {
-                $targetDir = BASE_PATH . "/public/uploads/";
-                $targetFileDb = "uploads/" . basename($_FILES["photo"]["name"]);
-                $targetFile = $targetDir . basename($_FILES["photo"]["name"]);
-                
-                if (!file_exists($targetDir)) {
-                    mkdir($targetDir, 0777, true);
-                }
-                
-                move_uploaded_file($_FILES["photo"]["tmp_name"], $targetFile);
-                $targetFile = $targetFileDb; // path for db
+            if (empty($_FILES['photo']['name']) || ($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                return $this->view('home/join', ['message' => 'Error: Please upload a passport size photograph.']);
             }
+
+            if (($_FILES['photo']['size'] ?? 0) > 2 * 1024 * 1024) {
+                return $this->view('home/join', ['message' => 'Error: Photo must be 2MB or smaller.']);
+            }
+
+            $imageInfo = @getimagesize($_FILES['photo']['tmp_name']);
+            $allowedTypes = ['image/jpeg' => 'jpg', 'image/png' => 'png'];
+            if (!$imageInfo || !isset($allowedTypes[$imageInfo['mime']])) {
+                return $this->view('home/join', ['message' => 'Error: Photo must be a JPG or PNG image.']);
+            }
+
+            $targetDir = BASE_PATH . "/public/uploads/";
+            if (!file_exists($targetDir)) {
+                mkdir($targetDir, 0777, true);
+            }
+
+            $fileName = uniqid('member_', true) . '.' . $allowedTypes[$imageInfo['mime']];
+            $targetFileDb = "uploads/" . $fileName;
+            $targetPath = $targetDir . $fileName;
+
+            if (!move_uploaded_file($_FILES["photo"]["tmp_name"], $targetPath)) {
+                return $this->view('home/join', ['message' => 'Error: Could not upload photo. Please try again.']);
+            }
+            $targetFile = $targetFileDb; // path for db
 
             // Insert
             // Insert

@@ -141,8 +141,8 @@ require_once __DIR__ . '/../layout/header.php';
                             </div>
                             
                             <div class="col-12 mt-4">
-                                <label class="form-label">Upload Photo (Max 2MB)</label>
-                                <input type="file" class="form-control" name="photo" accept="image/jpeg, image/png">
+                                <label class="form-label">Upload Photo (Max 2MB) <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" name="photo" accept="image/jpeg, image/png" required>
                                 <div class="form-text mt-2"><i class="fas fa-info-circle"></i> Please upload a clear passport size photograph (JPG or PNG format).</div>
                             </div>
                         </div>

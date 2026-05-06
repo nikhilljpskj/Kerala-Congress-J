@@ -43,25 +43,29 @@ class AdminController extends Controller {
         $limit = 10;
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $search = trim($_GET['q'] ?? '');
+        $roleFilter = trim($_GET['role'] ?? '');
         $offset = ($page - 1) * $limit;
-        $totalUsers = $userModel->countUsersByRole('district_admin', $search);
+        $totalUsers = $userModel->countAdminUsers($search, $roleFilter);
         $totalPages = max(1, (int)ceil($totalUsers / $limit));
         if ($page > $totalPages) {
             $page = $totalPages;
             $offset = ($page - 1) * $limit;
         }
 
-        $districtAdmins = $userModel->getUsersByRolePaginated('district_admin', $search, $offset, $limit);
+        $adminUsers = $userModel->getAdminUsersPaginated($search, $roleFilter, $offset, $limit);
+        $assignableRoles = $userModel->getAssignableRoles();
         
         $locationModel = new Location();
         $districts = $locationModel->getDistricts();
         
         return $this->view('admin/layout', [
-            'pageTitle' => 'District Authorities',
+            'pageTitle' => 'Admin Users',
             'contentPath' => VIEWS_PATH . '/admin/users.php',
-            'users' => $districtAdmins,
+            'users' => $adminUsers,
             'districts' => $districts,
+            'assignableRoles' => $assignableRoles,
             'search' => $search,
+            'roleFilter' => $roleFilter,
             'currentPage' => $page,
             'totalItems' => $totalUsers,
             'perPage' => $limit
@@ -75,10 +79,14 @@ class AdminController extends Controller {
             $email = $_POST['email'] ?? '';
             $phone = $_POST['phone'] ?? '';
             $password = $_POST['password'] ?? '';
-            $district_id = empty($_POST['district_id']) ? null : $_POST['district_id'];
+            $roleSlug = $_POST['role_slug'] ?? 'district_admin';
+            $district_id = ($roleSlug === 'district_admin' && !empty($_POST['district_id'])) ? $_POST['district_id'] : null;
 
             $userModel = new User();
-            $userModel->createUser($name, $email, $phone, $password, $district_id, 'district_admin');
+            $allowedRoles = array_column($userModel->getAssignableRoles(), 'slug');
+            if (in_array($roleSlug, $allowedRoles, true)) {
+                $userModel->createUser($name, $email, $phone, $password, $district_id, $roleSlug);
+            }
         }
         $this->redirect('/admin/users');
     }
@@ -90,8 +98,13 @@ class AdminController extends Controller {
             $name = $_POST['name'] ?? '';
             $email = $_POST['email'] ?? '';
             $phone = $_POST['phone'] ?? '';
-            $district_id = $_POST['district_id'] ?? null;
+            $roleSlug = $_POST['role_slug'] ?? 'district_admin';
+            $district_id = ($roleSlug === 'district_admin' && !empty($_POST['district_id'])) ? $_POST['district_id'] : null;
             $userModel = new User();
+            $allowedRoles = array_column($userModel->getAssignableRoles(), 'slug');
+            if (!in_array($roleSlug, $allowedRoles, true)) {
+                $this->redirect('/admin/users');
+            }
             $data = [
                 'name' => $name,
                 'email' => $email,
@@ -99,6 +112,7 @@ class AdminController extends Controller {
                 'district_id' => $district_id
             ];
             $userModel->updateUser($id, $data);
+            $userModel->updateUserRole($id, $roleSlug);
         }
         $this->redirect('/admin/users');
     }
@@ -182,10 +196,30 @@ class AdminController extends Controller {
     }
 
     public function roles() {
+        $userModel = new User();
+
         return $this->view('admin/layout', [
             'pageTitle' => 'Roles & Permissions',
-            'contentPath' => VIEWS_PATH . '/admin/roles.php'
+            'contentPath' => VIEWS_PATH . '/admin/roles.php',
+            'rolesList' => $userModel->getRolesWithPermissions(),
+            'permissionsList' => $userModel->getAllPermissions()
         ]);
+    }
+
+    public function updateRolePermissions() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $roleId = $_POST['role_id'] ?? null;
+            $permissionIds = $_POST['permissions'] ?? [];
+            $userModel = new User();
+            $userModel->updateRolePermissions($roleId, $permissionIds);
+
+            if (isset($_SESSION['user_id'])) {
+                $_SESSION['roles'] = $userModel->getUserRoles($_SESSION['user_id']);
+                $_SESSION['permissions'] = $userModel->getUserPermissions($_SESSION['user_id']);
+            }
+        }
+
+        $this->redirect('/admin/roles');
     }
 
     public function subdistricts() {

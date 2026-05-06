@@ -33,13 +33,14 @@ $router->get('/admin/logout', 'AuthController@logout');
 // Admin Dashboard Routes (Protected)
 $router->get('/admin/dashboard', 'AdminController@dashboard', ['AuthMiddleware']);
 $router->get('/admin/users', 'AdminController@users', ['AuthMiddleware', 'RoleMiddleware:manage_users']);
-$router->post('/admin/users/add', 'AdminController@addDistrictAuthority', ['AuthMiddleware']);
-$router->get('/admin/users/toggle', 'AdminController@toggleAuthorityStatus', ['AuthMiddleware']);
-$router->get('/admin/users/delete', 'AdminController@deleteAuthority', ['AuthMiddleware']);
+$router->post('/admin/users/add', 'AdminController@addDistrictAuthority', ['AuthMiddleware', 'RoleMiddleware:manage_users']);
+$router->get('/admin/users/toggle', 'AdminController@toggleAuthorityStatus', ['AuthMiddleware', 'RoleMiddleware:manage_users']);
+$router->get('/admin/users/delete', 'AdminController@deleteAuthority', ['AuthMiddleware', 'RoleMiddleware:manage_users']);
 $router->post('/admin/users/update', 'AdminController@updateDistrictAuthority', ['AuthMiddleware', 'RoleMiddleware:manage_users']);
 $router->post('/admin/users/change-password', 'AdminController@changeAuthorityPassword', ['AuthMiddleware', 'RoleMiddleware:manage_users']);
 
 $router->get('/admin/roles', 'AdminController@roles', ['AuthMiddleware', 'RoleMiddleware:manage_roles']);
+$router->post('/admin/roles/update-permissions', 'AdminController@updateRolePermissions', ['AuthMiddleware', 'RoleMiddleware:manage_roles']);
 $router->get('/admin/subdistricts', 'AdminController@subdistricts', ['AuthMiddleware']);
 
 // Content Management Routes
