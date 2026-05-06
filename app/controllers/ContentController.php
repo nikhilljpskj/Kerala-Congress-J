@@ -157,7 +157,30 @@ class ContentController extends Controller {
     public function deleteGallery() {
         $id = $_GET['id'] ?? null;
         $galleryModel = new Gallery();
-        $galleryModel->delete($id);
+        $item = $galleryModel->getById($id);
+
+        if ($item) {
+            $this->deleteGalleryFile($item['image_path'] ?? '');
+            $galleryModel->delete($id);
+        }
+        $this->redirect('/admin/gallery');
+    }
+
+    public function bulkDeleteGallery() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ids = $_POST['selected_ids'] ?? [];
+            $galleryModel = new Gallery();
+            $items = $galleryModel->getByIds($ids);
+
+            foreach ($items as $item) {
+                $this->deleteGalleryFile($item['image_path'] ?? '');
+            }
+
+            if (!empty($items)) {
+                $galleryModel->deleteMany(array_column($items, 'id'));
+            }
+        }
+
         $this->redirect('/admin/gallery');
     }
 
@@ -201,5 +224,23 @@ class ContentController extends Controller {
 
     private function createSlug($string) {
         return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $string), '-'));
+    }
+
+    private function deleteGalleryFile($imagePath) {
+        $imagePath = trim((string)$imagePath);
+        if ($imagePath === '' || preg_match('#^https?://#i', $imagePath)) {
+            return false;
+        }
+
+        $relativePath = ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $imagePath), DIRECTORY_SEPARATOR);
+        $fullPath = BASE_PATH . DIRECTORY_SEPARATOR . $relativePath;
+        $realFile = realpath($fullPath);
+        $realBase = realpath(BASE_PATH);
+
+        if (!$realFile || !$realBase || strpos($realFile, $realBase . DIRECTORY_SEPARATOR) !== 0 || !is_file($realFile)) {
+            return false;
+        }
+
+        return unlink($realFile);
     }
 }

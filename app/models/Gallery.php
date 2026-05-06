@@ -90,6 +90,19 @@ class Gallery {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function getByIds($ids) {
+        $ids = array_values(array_filter(array_map('intval', (array)$ids)));
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $query = "SELECT * FROM " . $this->table . " WHERE id IN ($placeholders)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($ids);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function create($data) {
         $query = "INSERT INTO " . $this->table . " 
             (title, image_path, category, status) 
@@ -129,5 +142,17 @@ class Gallery {
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
+    }
+
+    public function deleteMany($ids) {
+        $ids = array_values(array_filter(array_map('intval', (array)$ids)));
+        if (empty($ids)) {
+            return false;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $query = "DELETE FROM " . $this->table . " WHERE id IN ($placeholders)";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute($ids);
     }
 }

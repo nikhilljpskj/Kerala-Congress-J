@@ -54,6 +54,7 @@ $router->get('/admin/content/delete', 'ContentController@delete', ['AuthMiddlewa
 $router->get('/admin/gallery', 'ContentController@gallery', ['AuthMiddleware', 'RoleMiddleware:manage_content']);
 $router->post('/admin/gallery/add', 'ContentController@addGallery', ['AuthMiddleware', 'RoleMiddleware:manage_content']);
 $router->post('/admin/gallery/edit', 'ContentController@editGallery', ['AuthMiddleware', 'RoleMiddleware:manage_content']);
+$router->post('/admin/gallery/bulk-delete', 'ContentController@bulkDeleteGallery', ['AuthMiddleware', 'RoleMiddleware:manage_content']);
 $router->get('/admin/gallery/delete', 'ContentController@deleteGallery', ['AuthMiddleware', 'RoleMiddleware:manage_content']);
 
 $router->get('/admin/members', 'AdminController@members', ['AuthMiddleware', 'RoleMiddleware:manage_members']);

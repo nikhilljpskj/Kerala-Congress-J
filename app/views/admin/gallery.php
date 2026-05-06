@@ -41,38 +41,56 @@
     </div>
     
     <div class="col-12 col-lg-9">
-        <div class="row g-3">
-            <?php if (empty($items)): ?>
-                <div class="col-12 text-center py-5 text-muted">
-                    <i class="fas fa-images fa-3x mb-3 text-light"></i>
-                    <h6>No images found in this category.</h6>
+        <form action="<?= BASE_URL ?>/admin/gallery/bulk-delete" method="POST" id="bulkGalleryDeleteForm">
+            <div class="admin-toolbar mb-3 gallery-bulk-toolbar">
+                <label class="form-check m-0 d-flex align-items-center gap-2">
+                    <input class="form-check-input m-0" type="checkbox" id="selectAllGallery">
+                    <span class="small fw-semibold text-muted">Select all visible</span>
+                </label>
+                <div class="admin-actions">
+                    <span class="badge bg-light text-dark border" id="selectedGalleryCount">0 selected</span>
+                    <button type="submit" class="btn btn-danger btn-sm" id="bulkDeleteGalleryBtn" disabled>
+                        <i class="fas fa-trash"></i> Delete Selected
+                    </button>
                 </div>
-            <?php else: ?>
-                <?php foreach ($items as $item): ?>
-                    <div class="col-12 col-sm-6 col-xl-4">
-                        <div class="card border-0 shadow-sm h-100 overflow-hidden gallery-card position-relative">
-                            <img src="<?= BASE_URL ?><?= $item['image_path'] ?>" class="card-img-top" style="height: 200px; object-fit: cover;">
-                            <div class="card-body p-3">
-                                <h6 class="card-title small fw-bold mb-1"><?= htmlspecialchars($item['title'] ?: 'Untitled') ?></h6>
-                                <span class="badge bg-light text-muted tiny"><?= strtoupper($item['category']) ?></span>
-                            </div>
-                            <div class="gallery-overlay d-flex flex-column align-items-center justify-content-center gap-2">
-                                <button class="btn btn-white btn-sm rounded-pill px-3 shadow edit-gallery-btn" 
-                                        data-id="<?= $item['id'] ?>" 
-                                        data-title="<?= htmlspecialchars($item['title']) ?>" 
-                                        data-category="<?= $item['category'] ?>" 
-                                        data-image="<?= $item['image_path'] ?>">
-                                    <i class="fas fa-edit me-1"></i> Edit
-                                </button>
-                                <a href="<?= BASE_URL ?>/admin/gallery/delete?id=<?= $item['id'] ?>" class="btn btn-danger btn-sm rounded-pill px-3 shadow" onclick="return confirm('Delete this image?')">
-                                    <i class="fas fa-trash me-1"></i> Delete
-                                </a>
+            </div>
+
+            <div class="row g-3">
+                <?php if (empty($items)): ?>
+                    <div class="col-12 text-center py-5 text-muted">
+                        <i class="fas fa-images fa-3x mb-3 text-light"></i>
+                        <h6>No images found in this category.</h6>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($items as $item): ?>
+                        <div class="col-12 col-sm-6 col-xl-4">
+                            <div class="card border-0 shadow-sm h-100 overflow-hidden gallery-card position-relative">
+                                <label class="gallery-select">
+                                    <input class="form-check-input gallery-item-check" type="checkbox" name="selected_ids[]" value="<?= (int)$item['id'] ?>" aria-label="Select <?= htmlspecialchars($item['title'] ?: 'image') ?>">
+                                </label>
+                                <img src="<?= BASE_URL ?><?= $item['image_path'] ?>" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title small fw-bold mb-1"><?= htmlspecialchars($item['title'] ?: 'Untitled') ?></h6>
+                                    <span class="badge bg-light text-muted tiny"><?= strtoupper($item['category']) ?></span>
+                                </div>
+                                <div class="gallery-overlay d-flex flex-column align-items-center justify-content-center gap-2">
+                                    <button type="button" class="btn btn-white btn-sm rounded-pill px-3 shadow edit-gallery-btn" 
+                                            data-id="<?= $item['id'] ?>" 
+                                            data-title="<?= htmlspecialchars($item['title']) ?>" 
+                                            data-category="<?= $item['category'] ?>" 
+                                            data-image="<?= $item['image_path'] ?>">
+                                        <i class="fas fa-edit me-1"></i> Edit
+                                    </button>
+                                    <a href="<?= BASE_URL ?>/admin/gallery/delete?id=<?= $item['id'] ?>" class="btn btn-danger btn-sm rounded-pill px-3 shadow" onclick="return confirm('Delete this image and remove its file?')">
+                                        <i class="fas fa-trash me-1"></i> Delete
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </form>
         <?php render_admin_pagination($currentPage ?? 1, $totalItems ?? 0, $perPage ?? 12); ?>
     </div>
 </div>
@@ -167,6 +185,34 @@
 .gallery-card:hover .gallery-overlay {
     opacity: 1;
 }
+.gallery-bulk-toolbar {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+}
+.gallery-select {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    cursor: pointer;
+    left: 10px;
+    padding: 7px;
+    position: absolute;
+    top: 10px;
+    z-index: 3;
+}
+.gallery-select .form-check-input {
+    cursor: pointer;
+    height: 18px;
+    margin: 0;
+    width: 18px;
+}
+.gallery-card.is-selected {
+    outline: 3px solid rgba(198, 40, 40, 0.35);
+    outline-offset: 2px;
+}
 .btn-white {
     background: white;
     color: #0f172a;
@@ -193,6 +239,43 @@
 document.addEventListener('DOMContentLoaded', function() {
     const editBtns = document.querySelectorAll('.edit-gallery-btn');
     const editModal = new bootstrap.Modal(document.getElementById('editGalleryModal'));
+    const bulkForm = document.getElementById('bulkGalleryDeleteForm');
+    const selectAll = document.getElementById('selectAllGallery');
+    const checks = Array.from(document.querySelectorAll('.gallery-item-check'));
+    const selectedCount = document.getElementById('selectedGalleryCount');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteGalleryBtn');
+
+    function updateBulkState() {
+        const count = checks.filter(check => check.checked).length;
+        selectedCount.textContent = count + (count === 1 ? ' selected' : ' selected');
+        bulkDeleteBtn.disabled = count === 0;
+        if (selectAll) {
+            selectAll.disabled = checks.length === 0;
+            selectAll.checked = count > 0 && count === checks.length;
+            selectAll.indeterminate = count > 0 && count < checks.length;
+        }
+        checks.forEach(check => {
+            check.closest('.gallery-card')?.classList.toggle('is-selected', check.checked);
+        });
+    }
+
+    selectAll?.addEventListener('change', function() {
+        checks.forEach(check => {
+            check.checked = selectAll.checked;
+        });
+        updateBulkState();
+    });
+
+    checks.forEach(check => {
+        check.addEventListener('change', updateBulkState);
+    });
+
+    bulkForm?.addEventListener('submit', function(event) {
+        const count = checks.filter(check => check.checked).length;
+        if (count === 0 || !confirm(`Delete ${count} selected image${count === 1 ? '' : 's'} and remove their files?`)) {
+            event.preventDefault();
+        }
+    });
 
     editBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -210,5 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
             editModal.show();
         });
     });
+
+    updateBulkState();
 });
 </script>
