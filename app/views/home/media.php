@@ -205,8 +205,8 @@ require_once __DIR__ . '/../layout/header.php';
                 <div class="col-lg-4 col-md-6 gallery-item videos d-none">
                     <div class="gallery-card">
                         <div class="img-wrapper">
-                            <img src="https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg" alt="Video Placeholder">
-                            <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="glightbox item-overlay" data-gallery="video-gallery">
+                            <img src="https://img.youtube.com/vi/-GXK4RIh4dM/maxresdefault.jpg" alt="Kerala Congress Joseph Group candidates announced">
+                            <a href="https://www.youtube.com/embed/-GXK4RIh4dM?si=0UalbYIgr6t9pOLZ" class="glightbox item-overlay" data-gallery="video-gallery">
                                 <div class="zoom-icon">
                                     <i class="fas fa-play"></i>
                                 </div>
@@ -214,7 +214,7 @@ require_once __DIR__ . '/../layout/header.php';
                         </div>
                         <div class="p-4">
                             <span class="badge bg-danger mb-2">VIDEO</span>
-                            <h5 class="fw-bold text-dark mb-1">State Leadership Convention</h5>
+                            <h5 class="fw-bold text-dark mb-1">Kerala Congress Joseph Group candidates announced by party chairman P.J. Joseph</h5>
                             <p class="text-muted small mb-0"><i class="far fa-calendar-alt me-2 text-danger"></i> March 15, 2024</p>
                         </div>
                     </div>
