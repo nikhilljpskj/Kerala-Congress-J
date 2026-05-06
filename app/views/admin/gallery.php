@@ -12,7 +12,7 @@
                     <?php endif; ?>
                     <div class="admin-search-field">
                         <i class="fas fa-search"></i>
-                        <input type="text" name="q" class="form-control" placeholder="Search images..." value="<?= htmlspecialchars($search ?? '') ?>">
+                        <input type="text" name="q" class="form-control" placeholder="Search media..." value="<?= htmlspecialchars($search ?? '') ?>">
                     </div>
                     <button class="btn btn-primary" type="submit">Search</button>
                     <?php if (!empty($search)): ?>
@@ -20,7 +20,7 @@
                     <?php endif; ?>
                 </form>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGalleryModal">
-                    <i class="fas fa-plus"></i> Add Images
+                    <i class="fas fa-plus"></i> Add Media
                 </button>
             </div>
         </div>
@@ -32,7 +32,7 @@
         <div class="card border-0 shadow-sm p-3 h-100">
             <h6 class="fw-bold mb-3 small text-muted text-uppercase" style="letter-spacing: 1px;">Categories</h6>
             <div class="list-group list-group-flush">
-                <a href="<?= BASE_URL ?>/admin/gallery" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= !($category ?? '') ? 'active' : '' ?>">All Images</a>
+                <a href="<?= BASE_URL ?>/admin/gallery" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= !($category ?? '') ? 'active' : '' ?>">All Media</a>
                 <a href="<?= BASE_URL ?>/admin/gallery?category=main" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= ($category ?? '') == 'main' ? 'active' : '' ?>">Main Site</a>
                 <a href="<?= BASE_URL ?>/admin/gallery?category=kyf" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= ($category ?? '') == 'kyf' ? 'active' : '' ?>">KYF</a>
                 <a href="<?= BASE_URL ?>/admin/gallery?category=kitproc" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= ($category ?? '') == 'kitproc' ? 'active' : '' ?>">KITPROC</a>
@@ -59,29 +59,37 @@
                 <?php if (empty($items)): ?>
                     <div class="col-12 text-center py-5 text-muted">
                         <i class="fas fa-images fa-3x mb-3 text-light"></i>
-                        <h6>No images found in this category.</h6>
+                        <h6>No media found in this category.</h6>
                     </div>
                 <?php else: ?>
                     <?php foreach ($items as $item): ?>
                         <div class="col-12 col-sm-6 col-xl-4">
                             <div class="card border-0 shadow-sm h-100 overflow-hidden gallery-card position-relative">
                                 <label class="gallery-select">
-                                    <input class="form-check-input gallery-item-check" type="checkbox" name="selected_ids[]" value="<?= (int)$item['id'] ?>" aria-label="Select <?= htmlspecialchars($item['title'] ?: 'image') ?>">
+                                    <input class="form-check-input gallery-item-check" type="checkbox" name="selected_ids[]" value="<?= (int)$item['id'] ?>" aria-label="Select <?= htmlspecialchars($item['title'] ?: 'media') ?>">
                                 </label>
-                                <img src="<?= BASE_URL ?><?= $item['image_path'] ?>" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                <?php $isVideo = ($item['media_type'] ?? 'image') === 'video'; ?>
+                                <?php if ($isVideo): ?>
+                                    <iframe src="<?= htmlspecialchars($item['video_url']) ?>" class="gallery-video-frame" title="<?= htmlspecialchars($item['title'] ?: 'Gallery video') ?>" allowfullscreen></iframe>
+                                <?php else: ?>
+                                    <img src="<?= BASE_URL ?><?= $item['image_path'] ?>" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                <?php endif; ?>
                                 <div class="card-body p-3">
                                     <h6 class="card-title small fw-bold mb-1"><?= htmlspecialchars($item['title'] ?: 'Untitled') ?></h6>
                                     <span class="badge bg-light text-muted tiny"><?= strtoupper($item['category']) ?></span>
+                                    <span class="badge <?= $isVideo ? 'bg-danger' : 'bg-primary' ?> tiny ms-1"><?= $isVideo ? 'VIDEO' : 'IMAGE' ?></span>
                                 </div>
                                 <div class="gallery-overlay d-flex flex-column align-items-center justify-content-center gap-2">
                                     <button type="button" class="btn btn-white btn-sm rounded-pill px-3 shadow edit-gallery-btn" 
                                             data-id="<?= $item['id'] ?>" 
                                             data-title="<?= htmlspecialchars($item['title']) ?>" 
                                             data-category="<?= $item['category'] ?>" 
-                                            data-image="<?= $item['image_path'] ?>">
+                                            data-image="<?= $item['image_path'] ?>"
+                                            data-media-type="<?= htmlspecialchars($item['media_type'] ?? 'image') ?>"
+                                            data-video-url="<?= htmlspecialchars($item['video_url'] ?? '') ?>">
                                         <i class="fas fa-edit me-1"></i> Edit
                                     </button>
-                                    <a href="<?= BASE_URL ?>/admin/gallery/delete?id=<?= $item['id'] ?>" class="btn btn-danger btn-sm rounded-pill px-3 shadow" onclick="return confirm('Delete this image and remove its file?')">
+                                    <a href="<?= BASE_URL ?>/admin/gallery/delete?id=<?= $item['id'] ?>" class="btn btn-danger btn-sm rounded-pill px-3 shadow" onclick="return confirm('Delete this media item<?= $isVideo ? '' : ' and remove its file' ?>?')">
                                         <i class="fas fa-trash me-1"></i> Delete
                                     </a>
                                 </div>
@@ -100,7 +108,7 @@
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Edit Image Details</h5>
+                <h5 class="modal-title fw-bold">Edit Media Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="<?= BASE_URL ?>/admin/gallery/edit" method="POST" enctype="multipart/form-data">
@@ -120,12 +128,23 @@
                         <input type="text" name="title" id="edit_title" class="form-control border-0 shadow-sm" style="background: #f8fafc;" placeholder="Photo caption">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label small fw-bold">Media Type</label>
+                        <select name="media_type" id="edit_media_type" class="form-select border-0 shadow-sm media-type-select" data-scope="edit" style="background: #f8fafc;">
+                            <option value="image">Image</option>
+                            <option value="video">Video URL</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 media-image-field" id="edit_image_field">
                         <label class="form-label small fw-bold">Swap Image (optional)</label>
                         <div class="mb-2">
                             <img id="edit_preview" src="" class="rounded shadow-sm" style="height: 100px; width: 100%; object-fit: cover;">
                         </div>
                         <input type="file" name="image" class="form-control border-0 shadow-sm" style="background: #f8fafc;">
                         <p class="text-muted tiny mt-1">Leave blank to keep the current image.</p>
+                    </div>
+                    <div class="mb-3 media-video-field d-none" id="edit_video_field">
+                        <label class="form-label small fw-bold">YouTube Embed / Video URL</label>
+                        <input type="url" name="video_url" id="edit_video_url" class="form-control border-0 shadow-sm" style="background: #f8fafc;" placeholder="https://www.youtube.com/embed/...">
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -142,7 +161,7 @@
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Add New Images</h5>
+                <h5 class="modal-title fw-bold">Add New Media</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="<?= BASE_URL ?>/admin/gallery/add" method="POST" enctype="multipart/form-data">
@@ -157,16 +176,27 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Title (optional)</label>
-                        <input type="text" name="title" class="form-control border-0 shadow-sm" style="background: #f8fafc;" placeholder="Photo caption">
+                        <input type="text" name="title" class="form-control border-0 shadow-sm" style="background: #f8fafc;" placeholder="Media caption">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label small fw-bold">Media Type</label>
+                        <select name="media_type" class="form-select border-0 shadow-sm media-type-select" data-scope="add" style="background: #f8fafc;">
+                            <option value="image">Image</option>
+                            <option value="video">Video URL</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 media-image-field" id="add_image_field">
                         <label class="form-label small fw-bold">Select Image</label>
                         <input type="file" name="image" class="form-control border-0 shadow-sm" style="background: #f8fafc;" required>
+                    </div>
+                    <div class="mb-3 media-video-field d-none" id="add_video_field">
+                        <label class="form-label small fw-bold">YouTube Embed / Video URL</label>
+                        <input type="url" name="video_url" class="form-control border-0 shadow-sm" style="background: #f8fafc;" placeholder="https://www.youtube.com/embed/...">
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary px-4">Upload Image</button>
+                    <button type="submit" class="btn btn-primary px-4">Save Media</button>
                 </div>
             </form>
         </div>
@@ -184,6 +214,12 @@
 }
 .gallery-card:hover .gallery-overlay {
     opacity: 1;
+}
+.gallery-video-frame {
+    background: #0f172a;
+    border: 0;
+    height: 200px;
+    width: 100%;
 }
 .gallery-bulk-toolbar {
     background: #fff;
@@ -244,6 +280,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const checks = Array.from(document.querySelectorAll('.gallery-item-check'));
     const selectedCount = document.getElementById('selectedGalleryCount');
     const bulkDeleteBtn = document.getElementById('bulkDeleteGalleryBtn');
+    const mediaTypeSelects = document.querySelectorAll('.media-type-select');
+
+    function syncMediaFields(select) {
+        const scope = select.getAttribute('data-scope');
+        const imageField = document.getElementById(scope + '_image_field');
+        const videoField = document.getElementById(scope + '_video_field');
+        const imageInput = imageField?.querySelector('input[type="file"]');
+        const videoInput = videoField?.querySelector('input[name="video_url"]');
+        const isVideo = select.value === 'video';
+
+        imageField?.classList.toggle('d-none', isVideo);
+        videoField?.classList.toggle('d-none', !isVideo);
+
+        if (imageInput) {
+            imageInput.required = !isVideo && scope === 'add';
+        }
+        if (videoInput) {
+            videoInput.required = isVideo;
+        }
+    }
 
     function updateBulkState() {
         const count = checks.filter(check => check.checked).length;
@@ -272,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     bulkForm?.addEventListener('submit', function(event) {
         const count = checks.filter(check => check.checked).length;
-        if (count === 0 || !confirm(`Delete ${count} selected image${count === 1 ? '' : 's'} and remove their files?`)) {
+        if (count === 0 || !confirm(`Delete ${count} selected media item${count === 1 ? '' : 's'}? Image files will also be removed.`)) {
             event.preventDefault();
         }
     });
@@ -283,15 +339,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const title = btn.getAttribute('data-title');
             const category = btn.getAttribute('data-category');
             const image = btn.getAttribute('data-image');
+            const mediaType = btn.getAttribute('data-media-type') || 'image';
+            const videoUrl = btn.getAttribute('data-video-url') || '';
 
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_title').value = title;
             document.getElementById('edit_category').value = category;
             document.getElementById('edit_existing_image').value = image;
-            document.getElementById('edit_preview').src = '<?= BASE_URL ?>' + image;
+            document.getElementById('edit_media_type').value = mediaType;
+            document.getElementById('edit_video_url').value = videoUrl;
+            document.getElementById('edit_preview').src = image.startsWith('http') ? image : '<?= BASE_URL ?>' + image;
+            syncMediaFields(document.getElementById('edit_media_type'));
 
             editModal.show();
         });
+    });
+
+    mediaTypeSelects.forEach(select => {
+        select.addEventListener('change', () => syncMediaFields(select));
+        syncMediaFields(select);
     });
 
     updateBulkState();

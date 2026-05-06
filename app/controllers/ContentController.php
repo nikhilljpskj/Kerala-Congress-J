@@ -139,12 +139,27 @@ class ContentController extends Controller {
     public function addGallery() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $galleryModel = new Gallery();
-            $imagePath = $this->handleUpload('image');
+            $mediaType = $_POST['media_type'] ?? 'image';
+            $imagePath = '';
+            $videoUrl = null;
+
+            if ($mediaType === 'video') {
+                $videoUrl = $this->normalizeVideoUrl($_POST['video_url'] ?? '');
+                if (!$videoUrl) {
+                    $this->redirect('/admin/gallery');
+                }
+                $imagePath = $this->getVideoThumbnail($videoUrl);
+            } else {
+                $mediaType = 'image';
+                $imagePath = $this->handleUpload('image');
+            }
             
             if ($imagePath) {
                 $data = [
                     'title' => $_POST['title'] ?? '',
                     'image_path' => $imagePath,
+                    'video_url' => $videoUrl,
+                    'media_type' => $mediaType,
                     'category' => $_POST['category'] ?? 'main',
                     'status' => 1
                 ];
@@ -191,11 +206,33 @@ class ContentController extends Controller {
             $item = $galleryModel->getById($id);
 
             if ($item) {
-                $imagePath = $this->handleUpload('image') ?: $_POST['existing_image'];
+                $mediaType = $_POST['media_type'] ?? ($item['media_type'] ?? 'image');
+                $imagePath = $_POST['existing_image'] ?? ($item['image_path'] ?? '');
+                $videoUrl = null;
+
+                if ($mediaType === 'video') {
+                    $videoUrl = $this->normalizeVideoUrl($_POST['video_url'] ?? ($item['video_url'] ?? ''));
+                    if (!$videoUrl) {
+                        $this->redirect('/admin/gallery');
+                    }
+                    if (($item['media_type'] ?? 'image') === 'image') {
+                        $this->deleteGalleryFile($item['image_path'] ?? '');
+                    }
+                    $imagePath = $this->getVideoThumbnail($videoUrl);
+                } else {
+                    $mediaType = 'image';
+                    $uploadedImage = $this->handleUpload('image');
+                    if ($uploadedImage) {
+                        $this->deleteGalleryFile($item['image_path'] ?? '');
+                        $imagePath = $uploadedImage;
+                    }
+                }
                 
                 $data = [
                     'title' => $_POST['title'] ?? '',
                     'image_path' => $imagePath,
+                    'video_url' => $videoUrl,
+                    'media_type' => $mediaType,
                     'category' => $_POST['category'] ?? 'main',
                     'status' => 1
                 ];
@@ -224,6 +261,57 @@ class ContentController extends Controller {
 
     private function createSlug($string) {
         return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $string), '-'));
+    }
+
+    private function normalizeVideoUrl($url) {
+        $url = trim((string)$url);
+        if ($url === '') {
+            return null;
+        }
+
+        $parts = parse_url($url);
+        if (!$parts || empty($parts['host'])) {
+            return null;
+        }
+
+        $host = strtolower($parts['host']);
+        $path = $parts['path'] ?? '';
+        $videoId = null;
+        $query = [];
+        if (!empty($parts['query'])) {
+            parse_str($parts['query'], $query);
+        }
+
+        if (strpos($host, 'youtu.be') !== false) {
+            $videoId = trim($path, '/');
+        } elseif (strpos($host, 'youtube.com') !== false || strpos($host, 'youtube-nocookie.com') !== false) {
+            if (strpos($path, '/embed/') === 0) {
+                $videoId = basename($path);
+            } elseif (!empty($query['v'])) {
+                $videoId = $query['v'];
+            } elseif (strpos($path, '/shorts/') === 0) {
+                $videoId = basename($path);
+            }
+        }
+
+        if (!$videoId || !preg_match('/^[A-Za-z0-9_-]{6,}$/', $videoId)) {
+            return null;
+        }
+
+        $embedUrl = 'https://www.youtube.com/embed/' . $videoId;
+        if (!empty($query['si'])) {
+            $embedUrl .= '?si=' . rawurlencode($query['si']);
+        }
+
+        return $embedUrl;
+    }
+
+    private function getVideoThumbnail($videoUrl) {
+        $parts = parse_url($videoUrl);
+        $path = $parts['path'] ?? '';
+        $videoId = basename($path);
+
+        return 'https://img.youtube.com/vi/' . $videoId . '/maxresdefault.jpg';
     }
 
     private function deleteGalleryFile($imagePath) {

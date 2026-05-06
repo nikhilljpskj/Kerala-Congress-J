@@ -385,9 +385,14 @@ require_once __DIR__ . '/../layout/header.php';
             <div class="row g-3">
                 <?php if (!empty($gallery)): ?>
                     <?php foreach ($gallery as $item): ?>
+                    <?php $isVideo = ($item['media_type'] ?? 'image') === 'video' && !empty($item['video_url']); ?>
                     <div class="col-lg-3 col-md-6">
                         <div class="media-card rounded-4 overflow-hidden shadow-sm position-relative group">
-                            <img src="<?= BASE_URL ?><?= $item['image_path'] ?>" class="w-100" style="height: 250px; object-fit: cover; transition: 0.5s;">
+                            <?php if ($isVideo): ?>
+                                <iframe src="<?= htmlspecialchars($item['video_url']) ?>" class="w-100" style="height: 250px; border: 0; background: #111827;" title="<?= htmlspecialchars($item['title'] ?: 'Kerala Congress video') ?>" allowfullscreen></iframe>
+                            <?php else: ?>
+                                <img src="<?= BASE_URL ?><?= $item['image_path'] ?>" class="w-100" style="height: 250px; object-fit: cover; transition: 0.5s;">
+                            <?php endif; ?>
                             <div class="overlay position-absolute bottom-0 start-0 w-100 p-3 bg-dark bg-opacity-50 text-white translate-y-full transition-all media-overlay">
                                 <p class="small mb-0"><?= htmlspecialchars($item['title'] ?: 'Kerala Congress Event') ?></p>
                             </div>

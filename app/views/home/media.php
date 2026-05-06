@@ -95,6 +95,12 @@ require_once __DIR__ . '/../layout/header.php';
             object-fit: cover;
             transition: transform 0.6s ease;
         }
+        .img-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #111827;
+        }
 
         .gallery-card:hover .img-wrapper img {
             transform: scale(1.1);
@@ -171,20 +177,25 @@ require_once __DIR__ . '/../layout/header.php';
             <div class="row g-4 gallery-grid" id="galleryGrid">
                 <?php if (!empty($gallery)): ?>
                     <?php foreach ($gallery as $item): 
+                        $isVideo = ($item['media_type'] ?? 'image') === 'video' && !empty($item['video_url']);
                         $imagePath = BASE_URL . "/" . ltrim(($item['image_path'] ?? $item['image']), '/');
                     ?>
-                    <div class="col-lg-4 col-md-6 gallery-item photos">
+                    <div class="col-lg-4 col-md-6 gallery-item <?= $isVideo ? 'videos' : 'photos' ?>">
                         <div class="gallery-card">
                             <div class="img-wrapper">
-                                <img src="<?= $imagePath ?>" alt="<?= htmlspecialchars($item['title']) ?>">
-                                <a href="<?= $imagePath ?>" class="glightbox item-overlay" data-gallery="gallery1" data-title="<?= htmlspecialchars($item['title']) ?>">
-                                    <div class="zoom-icon">
-                                        <i class="fas fa-expand-alt"></i>
-                                    </div>
-                                </a>
+                                <?php if ($isVideo): ?>
+                                    <iframe src="<?= htmlspecialchars($item['video_url']) ?>" title="<?= htmlspecialchars($item['title'] ?: 'Kerala Congress video') ?>" allowfullscreen></iframe>
+                                <?php else: ?>
+                                    <img src="<?= $imagePath ?>" alt="<?= htmlspecialchars($item['title']) ?>">
+                                    <a href="<?= $imagePath ?>" class="glightbox item-overlay" data-gallery="gallery1" data-title="<?= htmlspecialchars($item['title']) ?>">
+                                        <div class="zoom-icon">
+                                            <i class="fas fa-expand-alt"></i>
+                                        </div>
+                                    </a>
+                                <?php endif; ?>
                             </div>
                             <div class="p-4">
-                                <span class="badge bg-light text-primary border mb-2" style="font-size: 0.7rem;">KERALA CONGRESS</span>
+                                <span class="badge <?= $isVideo ? 'bg-danger text-white' : 'bg-light text-primary border' ?> mb-2" style="font-size: 0.7rem;"><?= $isVideo ? 'VIDEO' : 'KERALA CONGRESS' ?></span>
                                 <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($item['title'] ?: 'Political Event') ?></h5>
                                 <p class="text-muted small mb-0"><i class="far fa-calendar-alt me-2 text-danger"></i> <?= date('F d, Y', strtotime($item['created_at'])) ?></p>
                             </div>

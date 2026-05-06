@@ -12,6 +12,7 @@ class Gallery {
     public function __construct() {
         $database = new Database();
         $this->conn = $database->getConnection();
+        $this->ensureMediaColumns();
     }
 
     public function getAll($category = null, $status = 1) {
@@ -43,7 +44,7 @@ class Gallery {
             $params[':category'] = [$category, PDO::PARAM_STR];
         }
         if ($search !== '') {
-            $conditions[] = "(title LIKE :search OR category LIKE :search OR image_path LIKE :search)";
+            $conditions[] = "(title LIKE :search OR category LIKE :search OR image_path LIKE :search OR video_url LIKE :search OR media_type LIKE :search)";
             $params[':search'] = ['%' . $search . '%', PDO::PARAM_STR];
         }
 
@@ -68,7 +69,7 @@ class Gallery {
             $params[':category'] = [$category, PDO::PARAM_STR];
         }
         if ($search !== '') {
-            $conditions[] = "(title LIKE :search OR category LIKE :search OR image_path LIKE :search)";
+            $conditions[] = "(title LIKE :search OR category LIKE :search OR image_path LIKE :search OR video_url LIKE :search OR media_type LIKE :search)";
             $params[':search'] = ['%' . $search . '%', PDO::PARAM_STR];
         }
 
@@ -105,13 +106,15 @@ class Gallery {
 
     public function create($data) {
         $query = "INSERT INTO " . $this->table . " 
-            (title, image_path, category, status) 
-            VALUES (:title, :image_path, :category, :status)";
+            (title, image_path, video_url, media_type, category, status) 
+            VALUES (:title, :image_path, :video_url, :media_type, :category, :status)";
             
         $stmt = $this->conn->prepare($query);
         
         $stmt->bindParam(':title', $data['title']);
         $stmt->bindParam(':image_path', $data['image_path']);
+        $stmt->bindParam(':video_url', $data['video_url']);
+        $stmt->bindParam(':media_type', $data['media_type']);
         $stmt->bindParam(':category', $data['category']);
         $stmt->bindParam(':status', $data['status']);
         
@@ -123,6 +126,8 @@ class Gallery {
             SET title = :title, 
                 category = :category, 
                 image_path = :image_path, 
+                video_url = :video_url,
+                media_type = :media_type,
                 status = :status 
             WHERE id = :id";
             
@@ -131,6 +136,8 @@ class Gallery {
         $stmt->bindParam(':title', $data['title']);
         $stmt->bindParam(':category', $data['category']);
         $stmt->bindParam(':image_path', $data['image_path']);
+        $stmt->bindParam(':video_url', $data['video_url']);
+        $stmt->bindParam(':media_type', $data['media_type']);
         $stmt->bindParam(':status', $data['status']);
         $stmt->bindParam(':id', $id);
         
@@ -154,5 +161,17 @@ class Gallery {
         $query = "DELETE FROM " . $this->table . " WHERE id IN ($placeholders)";
         $stmt = $this->conn->prepare($query);
         return $stmt->execute($ids);
+    }
+
+    private function ensureMediaColumns() {
+        $columns = $this->conn->query("SHOW COLUMNS FROM " . $this->table)->fetchAll(PDO::FETCH_COLUMN);
+
+        if (!in_array('media_type', $columns, true)) {
+            $this->conn->exec("ALTER TABLE " . $this->table . " ADD COLUMN media_type VARCHAR(20) NOT NULL DEFAULT 'image' AFTER image_path");
+        }
+
+        if (!in_array('video_url', $columns, true)) {
+            $this->conn->exec("ALTER TABLE " . $this->table . " ADD COLUMN video_url VARCHAR(500) NULL AFTER image_path");
+        }
     }
 }

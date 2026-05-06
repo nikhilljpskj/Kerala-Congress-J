@@ -236,9 +236,14 @@ require_once __DIR__ . '/layout/header.php';
             <div class="row g-3">
                 <?php if (!empty($gallery)): ?>
                     <?php foreach ($gallery as $item): ?>
+                    <?php $isVideo = ($item['media_type'] ?? 'image') === 'video' && !empty($item['video_url']); ?>
                     <div class="col-lg-4 col-md-6">
                         <div class="feature-card p-0 border-0 overflow-hidden shadow-sm h-100">
-                            <img src="<?= BASE_URL ?><?= $item['image_path'] ?>" class="w-100 h-100" style="object-fit: cover; min-height: 250px; transition: 0.5s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                            <?php if ($isVideo): ?>
+                                <iframe src="<?= htmlspecialchars($item['video_url']) ?>" class="w-100" style="min-height: 250px; border: 0; background: #111827;" title="<?= htmlspecialchars($item['title'] ?: 'KYF video') ?>" allowfullscreen></iframe>
+                            <?php else: ?>
+                                <img src="<?= BASE_URL ?><?= $item['image_path'] ?>" class="w-100 h-100" style="object-fit: cover; min-height: 250px; transition: 0.5s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endforeach; ?>

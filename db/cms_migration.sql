@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS `gallery` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) DEFAULT NULL,
   `image_path` varchar(255) NOT NULL,
+  `video_url` varchar(500) DEFAULT NULL,
+  `media_type` varchar(20) NOT NULL DEFAULT 'image',
   `category` varchar(50) DEFAULT 'main' COMMENT 'main, kyf, kitproc',
   `status` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
