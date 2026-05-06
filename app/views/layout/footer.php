@@ -31,7 +31,7 @@
                     <h5 class="footer-heading text-white fw-bold">Contact Us</h5>
                     <p class="text-white mb-2" style="opacity: 0.9;"><i class="fas fa-map-marker-alt me-2"></i> State Committee Office, Kottayam, Kerala</p>
                     <p class="text-white mb-3" style="opacity: 0.9;"><i class="fas fa-phone-alt me-2"></i> <a href="tel:+919447355775" class="text-white text-decoration-none">+91 9447355775</a></p>
-                    <p class="text-white mb-3" style="opacity: 0.9;"><i class="fas fa-envelope me-2"></i> <a href="mailto:info@redeemertechnologies.com" class="text-white text-decoration-none">info@redeemertechnologies.com</a></p>
+                    <p class="text-white mb-3" style="opacity: 0.9;"><i class="fas fa-envelope me-2"></i> <a href="mailto:info@keralacongress.org.in" class="text-white text-decoration-none">info@keralacongress.org.in</a></p>
                     
                     <div>
                         <a href="https://wa.me/919447355775" class="social-btn"><i class="fab fa-whatsapp"></i></a>

@@ -40,10 +40,7 @@
                     <?php foreach ($users as $u): ?>
                     <tr>
                         <td data-label="Name">
-                            <div class="d-flex align-items-center">
-                                <img src="https://ui-avatars.com/api/?name=<?= urlencode($u['name']) ?>&background=random" class="rounded-circle me-2" width="30">
-                                <strong><?= htmlspecialchars($u['name']) ?></strong>
-                            </div>
+                            <strong><?= htmlspecialchars($u['name']) ?></strong>
                         </td>
                         <td data-label="Role"><span class="badge bg-primary bg-opacity-10 text-primary"><?= htmlspecialchars($u['role_name'] ?? 'Admin') ?></span></td>
                         <td data-label="Email / Login"><?= htmlspecialchars($u['email']) ?></td>

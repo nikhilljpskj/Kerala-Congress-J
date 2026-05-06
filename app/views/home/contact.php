@@ -50,6 +50,15 @@ require_once __DIR__ . '/../layout/header.php';
                                     <p class="text-muted mb-0">9447355775</p>
                                 </div>
                             </div>
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary me-3">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold">Email</h6>
+                                    <p class="text-muted mb-0"><a href="mailto:info@keralacongress.org.in" class="text-muted text-decoration-none">info@keralacongress.org.in</a></p>
+                                </div>
+                            </div>
 
                             <hr class="my-4">
                             
