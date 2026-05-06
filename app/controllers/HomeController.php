@@ -135,7 +135,21 @@ class HomeController extends Controller {
 
             $fname = $_POST['fname'] ?? '';
             $lname = $_POST['lname'] ?? '';
-            $membership = $_POST['membership'] ?? '';
+            $baseMembership = 'Kerala Congress';
+            $subMembership = trim($_POST['sub_membership'] ?? '');
+            $allowedSubMemberships = [
+                'Kerala Students Congress (KSC)',
+                'Kerala Youth Front (KYF)',
+                'Kerala IT & Professional Congress (KITPROC)',
+                'Kerala Vanitha Congress',
+                'Kerala Pravasi Congress'
+            ];
+
+            if ($subMembership !== '' && !in_array($subMembership, $allowedSubMemberships, true)) {
+                return $this->view('home/join', ['message' => 'Error: Please select a valid sub organization.']);
+            }
+
+            $membership = $subMembership !== '' ? $baseMembership . ' + ' . $subMembership : $baseMembership;
             $aadhaar = empty($_POST['aadhaar']) ? 0 : $_POST['aadhaar'];
             $address = $_POST['address'] ?? '';
             $email = $_POST['email'] ?? '';
@@ -152,8 +166,14 @@ class HomeController extends Controller {
             $local_body_id = empty($_POST['local_body_id']) ? null : $_POST['local_body_id'];
             $ward = $_POST['ward'] ?? '';
             $reference = $_POST['reference'] ?? '';
-            $president = $_POST['president'] ?? '';
-            $secretary = $_POST['secretary'] ?? '';
+            $president = '-';
+            $secretary = '-';
+            if ($subMembership === 'Kerala IT & Professional Congress (KITPROC)') {
+                $president = 'Apu John Joseph';
+                $secretary = 'Jais John Vettiyar';
+            } elseif ($subMembership === 'Kerala Youth Front (KYF)') {
+                $president = 'KV Kannan';
+            }
 
             // Check if mobile already exists
             $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM members WHERE mobile = ?");

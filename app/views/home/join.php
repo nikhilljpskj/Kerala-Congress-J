@@ -105,17 +105,23 @@ require_once __DIR__ . '/../layout/header.php';
                         <div class="section-divider">Party Affiliation & Location</div>
 
                         <div class="row g-3">
-                            <div class="col-md-12">
-                                <label class="form-label">Select Organization <span class="text-danger">*</span></label>
-                                <select class="form-select" name="membership" id="membership" required onchange="setPresidentSecretary()">
-                                    <option value="" disabled selected>Choose the organization you wish to join</option>
-                                    <option value="Kerala Congress">Kerala Congress</option>
+                            <div class="col-md-6">
+                                <label class="form-label">Primary Organization <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" value="Kerala Congress" readonly>
+                                <input type="hidden" name="membership" value="Kerala Congress">
+                                <div class="form-text mt-2">Every application includes Kerala Congress membership.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Optional Sub Organization</label>
+                                <select class="form-select" name="sub_membership" id="sub_membership" onchange="setPresidentSecretary()">
+                                    <option value="" selected>Kerala Congress only</option>
                                     <option value="Kerala Students Congress (KSC)">Kerala Students Congress (KSC)</option>
                                     <option value="Kerala Youth Front (KYF)">Kerala Youth Front (KYF)</option>
                                     <option value="Kerala IT & Professional Congress (KITPROC)">Kerala IT & Professional Congress (KITPROC)</option>
                                     <option value="Kerala Vanitha Congress">Kerala Vanitha Congress</option>
                                     <option value="Kerala Pravasi Congress">Kerala Pravasi Congress</option>
                                 </select>
+                                <div class="form-text mt-2">You can choose only one sub organization.</div>
                                 <input type="hidden" name="president" id="president">
                                 <input type="hidden" name="secretary" id="secretary">
                             </div>
@@ -249,7 +255,7 @@ require_once __DIR__ . '/../layout/header.php';
     })();
 
     function setPresidentSecretary() {
-        var membership = document.getElementById('membership').value;
+        var membership = document.getElementById('sub_membership').value;
         var presidentField = document.getElementById('president');
         var secretaryField = document.getElementById('secretary');
 
