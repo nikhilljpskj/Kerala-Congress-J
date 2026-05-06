@@ -27,7 +27,8 @@
                     <h5 class="text-white mb-4">Contact KITPROC</h5>
                     <p class="mb-2"><i class="fas fa-map-marker-alt me-2 text-danger"></i> State Committee Office, Kochi/Kottayam</p>
                     <p class="mb-3"><i class="fas fa-phone-alt me-2 text-danger"></i> +91 9447355775</p>
-                    <p class="mb-0"><i class="fas fa-envelope me-2 text-danger"></i> <a href="mailto:info@keralacongress.org.in" class="text-decoration-none" style="color: inherit;">info@keralacongress.org.in</a></p>
+                    <p class="mb-1"><i class="fas fa-envelope me-2 text-danger"></i> <a href="mailto:info@keralacongress.org.in" class="text-decoration-none" style="color: inherit;">info@keralacongress.org.in</a></p>
+                    <p class="mb-0"><i class="fas fa-envelope me-2 text-danger"></i> <a href="mailto:info@redeemertechnologies.com" class="text-decoration-none" style="color: inherit;">info@redeemertechnologies.com</a></p>
                 </div>
             </div>
             

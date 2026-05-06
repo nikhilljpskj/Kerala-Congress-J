@@ -56,7 +56,8 @@ require_once __DIR__ . '/../layout/header.php';
                                 </div>
                                 <div>
                                     <h6 class="mb-0 fw-bold">Email</h6>
-                                    <p class="text-muted mb-0"><a href="mailto:info@keralacongress.org.in" class="text-muted text-decoration-none">info@keralacongress.org.in</a></p>
+                                    <p class="text-muted mb-1"><a href="mailto:info@keralacongress.org.in" class="text-muted text-decoration-none">info@keralacongress.org.in</a></p>
+                                    <p class="text-muted mb-0"><a href="mailto:info@redeemertechnologies.com" class="text-muted text-decoration-none">info@redeemertechnologies.com</a></p>
                                 </div>
                             </div>
 
