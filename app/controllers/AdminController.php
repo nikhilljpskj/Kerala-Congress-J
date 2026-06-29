@@ -240,28 +240,57 @@ class AdminController extends Controller {
         $limit = 10;
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $search = trim($_GET['q'] ?? '');
+        $statusFilter = $_GET['status'] ?? '';
+        $membershipFilter = trim($_GET['membership'] ?? '');
+        $districtFilter = isset($_GET['district_id']) ? (int)$_GET['district_id'] : 0;
+        $sort = $_GET['sort'] ?? 'newest';
+        $allowedStatuses = ['', '0', '1'];
+        $allowedSorts = ['newest', 'oldest', 'name_asc', 'name_desc', 'reg_asc', 'reg_desc'];
+        if (!in_array((string)$statusFilter, $allowedStatuses, true)) {
+            $statusFilter = '';
+        }
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'newest';
+        }
         $offset = ($page - 1) * $limit;
         
         $districtId = null;
+        $isSuperAdmin = in_array('super_admin', $_SESSION['roles']);
         if (!in_array('super_admin', $_SESSION['roles'])) {
             $userModel = new User();
             $user = $userModel->findByEmail($_SESSION['user_email']);
             $districtId = $user['district_id'] ?? null;
         }
 
-        $totalMembers = $memberModel->getTotalMemberCount($districtId, $search);
+        $filters = [
+            'status' => $statusFilter,
+            'membership' => $membershipFilter,
+            'district_id' => $isSuperAdmin ? $districtFilter : 0
+        ];
+        $locationModel = new Location();
+        $districts = $isSuperAdmin ? $locationModel->getDistricts() : [];
+        $membershipOptions = $memberModel->getMembershipOptions($districtId);
+
+        $totalMembers = $memberModel->getTotalMemberCount($districtId, $search, $filters);
         $totalPages = max(1, (int)ceil($totalMembers / $limit));
         if ($page > $totalPages) {
             $page = $totalPages;
             $offset = ($page - 1) * $limit;
         }
-        $members = $memberModel->getMembersPaginated($offset, $limit, $districtId, $search);
+        $members = $memberModel->getMembersPaginated($offset, $limit, $districtId, $search, $filters, $sort);
 
         return $this->view('admin/layout', [
             'pageTitle' => 'Member Registrations',
             'contentPath' => VIEWS_PATH . '/admin/members.php',
             'members' => $members,
             'search' => $search,
+            'statusFilter' => $statusFilter,
+            'membershipFilter' => $membershipFilter,
+            'districtFilter' => $districtFilter,
+            'sort' => $sort,
+            'districts' => $districts,
+            'membershipOptions' => $membershipOptions,
+            'isSuperAdmin' => $isSuperAdmin,
             'currentPage' => $page,
             'totalPages' => $totalPages,
             'totalMembers' => $totalMembers,

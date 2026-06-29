@@ -152,6 +152,27 @@ require_once __DIR__ . '/../layout/header.php';
             border-radius: 30px;
             border: 2px dashed #e2e8f0;
         }
+
+        .media-pagination .page-link {
+            border: none;
+            border-radius: 999px;
+            color: #475569;
+            font-weight: 700;
+            margin: 0 4px;
+            min-width: 42px;
+            text-align: center;
+        }
+
+        .media-pagination .page-item.active .page-link {
+            background: var(--kc-red);
+            box-shadow: 0 8px 20px rgba(211, 47, 47, 0.25);
+            color: #fff;
+        }
+
+        .media-pagination .page-item.disabled .page-link {
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
     </style>
 
     <div class="media-hero text-white text-center">
@@ -163,11 +184,28 @@ require_once __DIR__ . '/../layout/header.php';
 
     <!-- Filter Bar -->
     <div class="filter-container text-center">
+        <?php
+            $mediaType = $mediaType ?? '';
+            $mediaFilterUrl = static function ($type = '') {
+                $params = [];
+                if ($type !== '') {
+                    $params['type'] = $type;
+                }
+                return BASE_URL . '/media' . ($params ? '?' . http_build_query($params) : '');
+            };
+            $mediaPageUrl = static function ($page) use ($mediaType) {
+                $params = ['page' => max(1, (int)$page)];
+                if ($mediaType !== '') {
+                    $params['type'] = $mediaType;
+                }
+                return BASE_URL . '/media?' . http_build_query($params);
+            };
+        ?>
         <div class="container">
             <div class="glass-filter animate-up" style="animation-delay: 0.1s;">
-                <button class="filter-btn active" data-filter="all">All Items</button>
-                <button class="filter-btn" data-filter="photos">Photography</button>
-                <button class="filter-btn" data-filter="videos">Video Gallery</button>
+                <a class="filter-btn text-decoration-none <?= $mediaType === '' ? 'active' : '' ?>" href="<?= $mediaFilterUrl() ?>">All Items</a>
+                <a class="filter-btn text-decoration-none <?= $mediaType === 'image' ? 'active' : '' ?>" href="<?= $mediaFilterUrl('image') ?>">Photography</a>
+                <a class="filter-btn text-decoration-none <?= $mediaType === 'video' ? 'active' : '' ?>" href="<?= $mediaFilterUrl('video') ?>">Video Gallery</a>
             </div>
         </div>
     </div>
@@ -178,7 +216,8 @@ require_once __DIR__ . '/../layout/header.php';
                 <?php if (!empty($gallery)): ?>
                     <?php foreach ($gallery as $item): 
                         $isVideo = ($item['media_type'] ?? 'image') === 'video' && !empty($item['video_url']);
-                        $imagePath = BASE_URL . "/" . ltrim(($item['image_path'] ?? $item['image']), '/');
+                        $rawImagePath = $item['image_path'] ?? ($item['image'] ?? '');
+                        $imagePath = preg_match('#^https?://#i', $rawImagePath) ? $rawImagePath : BASE_URL . "/" . ltrim($rawImagePath, '/');
                     ?>
                     <div class="col-lg-4 col-md-6 gallery-item <?= $isVideo ? 'videos' : 'photos' ?>">
                         <div class="gallery-card">
@@ -212,6 +251,38 @@ require_once __DIR__ . '/../layout/header.php';
                     </div>
                 <?php endif; ?>
             </div>
+
+            <?php if (($totalPages ?? 1) > 1): ?>
+                <nav class="media-pagination mt-5" aria-label="Media gallery pages">
+                    <ul class="pagination justify-content-center flex-wrap">
+                        <li class="page-item <?= ($currentPage ?? 1) <= 1 ? 'disabled' : '' ?>">
+                            <a class="page-link px-4" href="<?= ($currentPage ?? 1) <= 1 ? '#' : $mediaPageUrl(($currentPage ?? 1) - 1) ?>">Previous</a>
+                        </li>
+                        <?php
+                            $current = (int)($currentPage ?? 1);
+                            $total = (int)($totalPages ?? 1);
+                            $start = max(1, $current - 2);
+                            $end = min($total, $current + 2);
+                        ?>
+                        <?php if ($start > 1): ?>
+                            <li class="page-item"><a class="page-link" href="<?= $mediaPageUrl(1) ?>">1</a></li>
+                            <?php if ($start > 2): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                        <?php endif; ?>
+                        <?php for ($i = $start; $i <= $end; $i++): ?>
+                            <li class="page-item <?= $i === $current ? 'active' : '' ?>">
+                                <a class="page-link" href="<?= $mediaPageUrl($i) ?>"><?= $i ?></a>
+                            </li>
+                        <?php endfor; ?>
+                        <?php if ($end < $total): ?>
+                            <?php if ($end < $total - 1): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                            <li class="page-item"><a class="page-link" href="<?= $mediaPageUrl($total) ?>"><?= $total ?></a></li>
+                        <?php endif; ?>
+                        <li class="page-item <?= $current >= $total ? 'disabled' : '' ?>">
+                            <a class="page-link px-4" href="<?= $current >= $total ? '#' : $mediaPageUrl($current + 1) ?>">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -224,44 +295,6 @@ require_once __DIR__ . '/../layout/header.php';
                 touchNavigation: true,
                 loop: true,
                 autoplayVideos: true
-            });
-
-            // Filtering Logic
-            const filterBtns = document.querySelectorAll('.filter-btn');
-            const galleryItems = document.querySelectorAll('.gallery-item');
-
-            filterBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // Update Active UI
-                    filterBtns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-
-                    const filter = btn.getAttribute('data-filter');
-
-                    galleryItems.forEach(item => {
-                        item.style.transition = 'all 0.4s ease';
-                        
-                        if (filter === 'all') {
-                            item.classList.remove('d-none');
-                            setTimeout(() => {
-                                item.style.opacity = '1';
-                                item.style.transform = 'scale(1)';
-                            }, 10);
-                        } else if (item.classList.contains(filter)) {
-                            item.classList.remove('d-none');
-                            setTimeout(() => {
-                                item.style.opacity = '1';
-                                item.style.transform = 'scale(1)';
-                            }, 10);
-                        } else {
-                            item.style.opacity = '0';
-                            item.style.transform = 'scale(0.8)';
-                            setTimeout(() => {
-                                item.classList.add('d-none');
-                            }, 400);
-                        }
-                    });
-                });
             });
 
             // Reveal animations

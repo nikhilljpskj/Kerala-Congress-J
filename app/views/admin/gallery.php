@@ -1,4 +1,36 @@
 <div class="row mb-4">
+    <?php
+        $galleryBaseFilters = array_filter([
+            'q' => $search ?? '',
+            'media_type' => $mediaTypeFilter ?? '',
+            'status' => $statusFilter ?? '1',
+            'sort' => (($sort ?? 'newest') !== 'newest') ? ($sort ?? 'newest') : ''
+        ], static function ($value) {
+            return $value !== '' && $value !== null;
+        });
+        $galleryCategoryUrl = static function ($categoryValue = null) use ($galleryBaseFilters) {
+            $params = $galleryBaseFilters;
+            if ($categoryValue) {
+                $params['category'] = $categoryValue;
+            }
+            return BASE_URL . '/admin/gallery' . ($params ? '?' . http_build_query($params) : '');
+        };
+        $galleryPreviewUrl = static function ($item) {
+            $imagePath = trim((string)($item['image_path'] ?? ''));
+            if (($item['media_type'] ?? 'image') === 'video') {
+                $videoUrl = (string)($item['video_url'] ?? '');
+                if (preg_match('#/embed/([A-Za-z0-9_-]+)#', $videoUrl, $matches)) {
+                    return 'https://img.youtube.com/vi/' . rawurlencode($matches[1]) . '/hqdefault.jpg';
+                }
+                return $imagePath;
+            }
+            if (preg_match('#^https?://#i', $imagePath)) {
+                return $imagePath;
+            }
+            return BASE_URL . '/admin/gallery/thumb?id=' . (int)$item['id'];
+        };
+        $hasGalleryFilters = !empty($search) || !empty($category) || !empty($mediaTypeFilter) || (string)($statusFilter ?? '1') !== '1' || ($sort ?? 'newest') !== 'newest';
+    ?>
     <div class="col-md-12">
         <div class="card p-4 border-0 shadow-sm">
             <div class="admin-page-header">
@@ -6,7 +38,7 @@
                     <h5 class="fw-bold m-0">Gallery Management</h5>
                     <p class="text-muted small m-0">Manage photo galleries across all sections.</p>
                 </div>
-                <form action="<?= BASE_URL ?>/admin/gallery" method="GET" class="admin-search">
+                <form action="<?= BASE_URL ?>/admin/gallery" method="GET" class="admin-search admin-search-wide gallery-filter-form">
                     <?php if (!empty($category)): ?>
                         <input type="hidden" name="category" value="<?= htmlspecialchars($category) ?>">
                     <?php endif; ?>
@@ -14,9 +46,26 @@
                         <i class="fas fa-search"></i>
                         <input type="text" name="q" class="form-control" placeholder="Search media..." value="<?= htmlspecialchars($search ?? '') ?>">
                     </div>
-                    <button class="btn btn-primary" type="submit">Search</button>
-                    <?php if (!empty($search)): ?>
-                        <a href="<?= BASE_URL ?>/admin/gallery<?= !empty($category) ? '?category=' . urlencode($category) : '' ?>" class="btn btn-light">Clear</a>
+                    <select name="media_type" class="form-select" aria-label="Filter by media type">
+                        <option value="" <?= ($mediaTypeFilter ?? '') === '' ? 'selected' : '' ?>>All Types</option>
+                        <option value="image" <?= ($mediaTypeFilter ?? '') === 'image' ? 'selected' : '' ?>>Images</option>
+                        <option value="video" <?= ($mediaTypeFilter ?? '') === 'video' ? 'selected' : '' ?>>Videos</option>
+                    </select>
+                    <select name="status" class="form-select" aria-label="Filter by status">
+                        <option value="1" <?= (string)($statusFilter ?? '1') === '1' ? 'selected' : '' ?>>Active</option>
+                        <option value="0" <?= (string)($statusFilter ?? '') === '0' ? 'selected' : '' ?>>Inactive</option>
+                        <option value="" <?= (string)($statusFilter ?? '') === '' ? 'selected' : '' ?>>All Status</option>
+                    </select>
+                    <select name="sort" class="form-select" aria-label="Sort media">
+                        <option value="newest" <?= ($sort ?? 'newest') === 'newest' ? 'selected' : '' ?>>Newest First</option>
+                        <option value="oldest" <?= ($sort ?? '') === 'oldest' ? 'selected' : '' ?>>Oldest First</option>
+                        <option value="title_asc" <?= ($sort ?? '') === 'title_asc' ? 'selected' : '' ?>>Title A-Z</option>
+                        <option value="title_desc" <?= ($sort ?? '') === 'title_desc' ? 'selected' : '' ?>>Title Z-A</option>
+                        <option value="category_asc" <?= ($sort ?? '') === 'category_asc' ? 'selected' : '' ?>>Category</option>
+                    </select>
+                    <button class="btn btn-primary" type="submit">Apply</button>
+                    <?php if ($hasGalleryFilters): ?>
+                        <a href="<?= BASE_URL ?>/admin/gallery" class="btn btn-light">Clear</a>
                     <?php endif; ?>
                 </form>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGalleryModal">
@@ -32,10 +81,10 @@
         <div class="card border-0 shadow-sm p-3 h-100">
             <h6 class="fw-bold mb-3 small text-muted text-uppercase" style="letter-spacing: 1px;">Categories</h6>
             <div class="list-group list-group-flush">
-                <a href="<?= BASE_URL ?>/admin/gallery" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= !($category ?? '') ? 'active' : '' ?>">All Media</a>
-                <a href="<?= BASE_URL ?>/admin/gallery?category=main" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= ($category ?? '') == 'main' ? 'active' : '' ?>">Main Site</a>
-                <a href="<?= BASE_URL ?>/admin/gallery?category=kyf" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= ($category ?? '') == 'kyf' ? 'active' : '' ?>">KYF</a>
-                <a href="<?= BASE_URL ?>/admin/gallery?category=kitproc" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= ($category ?? '') == 'kitproc' ? 'active' : '' ?>">KITPROC</a>
+                <a href="<?= $galleryCategoryUrl() ?>" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= !($category ?? '') ? 'active' : '' ?>">All Media</a>
+                <a href="<?= $galleryCategoryUrl('main') ?>" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= ($category ?? '') == 'main' ? 'active' : '' ?>">Main Site</a>
+                <a href="<?= $galleryCategoryUrl('kyf') ?>" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= ($category ?? '') == 'kyf' ? 'active' : '' ?>">KYF</a>
+                <a href="<?= $galleryCategoryUrl('kitproc') ?>" class="list-group-item list-group-item-action border-0 rounded-3 mb-1 <?= ($category ?? '') == 'kitproc' ? 'active' : '' ?>">KITPROC</a>
             </div>
         </div>
     </div>
@@ -69,10 +118,14 @@
                                     <input class="form-check-input gallery-item-check" type="checkbox" name="selected_ids[]" value="<?= (int)$item['id'] ?>" aria-label="Select <?= htmlspecialchars($item['title'] ?: 'media') ?>">
                                 </label>
                                 <?php $isVideo = ($item['media_type'] ?? 'image') === 'video'; ?>
+                                <?php $previewUrl = $galleryPreviewUrl($item); ?>
                                 <?php if ($isVideo): ?>
-                                    <iframe src="<?= htmlspecialchars($item['video_url']) ?>" class="gallery-video-frame" title="<?= htmlspecialchars($item['title'] ?: 'Gallery video') ?>" allowfullscreen></iframe>
+                                    <a href="<?= htmlspecialchars($item['video_url']) ?>" target="_blank" rel="noopener" class="gallery-video-preview" title="Open video">
+                                        <img src="<?= htmlspecialchars($previewUrl) ?>" class="gallery-preview-img" alt="<?= htmlspecialchars($item['title'] ?: 'Gallery video') ?>" loading="lazy" decoding="async" width="420" height="240">
+                                        <span class="gallery-play-badge"><i class="fas fa-play"></i></span>
+                                    </a>
                                 <?php else: ?>
-                                    <img src="<?= BASE_URL ?><?= $item['image_path'] ?>" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                    <img src="<?= htmlspecialchars($previewUrl) ?>" class="gallery-preview-img" alt="<?= htmlspecialchars($item['title'] ?: 'Gallery image') ?>" loading="lazy" decoding="async" width="420" height="240">
                                 <?php endif; ?>
                                 <div class="card-body p-3">
                                     <h6 class="card-title small fw-bold mb-1"><?= htmlspecialchars($item['title'] ?: 'Untitled') ?></h6>
@@ -215,11 +268,34 @@
 .gallery-card:hover .gallery-overlay {
     opacity: 1;
 }
-.gallery-video-frame {
+.gallery-preview-img,
+.gallery-video-preview {
     background: #0f172a;
-    border: 0;
+    display: block;
     height: 200px;
+    object-fit: cover;
+    position: relative;
     width: 100%;
+}
+.gallery-video-preview {
+    color: #fff;
+    overflow: hidden;
+    text-decoration: none;
+}
+.gallery-play-badge {
+    align-items: center;
+    background: rgba(220, 38, 38, 0.92);
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+    display: inline-flex;
+    height: 46px;
+    justify-content: center;
+    left: 50%;
+    padding-left: 3px;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 46px;
 }
 .gallery-bulk-toolbar {
     background: #fff;

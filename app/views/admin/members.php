@@ -1,13 +1,40 @@
 <div class="card p-4">
     <div class="admin-toolbar mb-4">
         <h5 class="fw-bold m-0">Member Registrations</h5>
-        <form action="<?= BASE_URL ?>/admin/members" method="GET" class="admin-search">
+        <form action="<?= BASE_URL ?>/admin/members" method="GET" class="admin-search admin-search-wide members-filter-form">
             <div class="admin-search-field">
                 <i class="fas fa-search"></i>
                 <input type="text" name="q" class="form-control" placeholder="Search name, reg no, phone..." value="<?= htmlspecialchars($search ?? '') ?>">
             </div>
-            <button class="btn btn-primary" type="submit">Search</button>
-            <?php if (!empty($search)): ?>
+            <select name="status" class="form-select" aria-label="Filter by status">
+                <option value="" <?= ($statusFilter ?? '') === '' ? 'selected' : '' ?>>All Status</option>
+                <option value="0" <?= (string)($statusFilter ?? '') === '0' ? 'selected' : '' ?>>Pending</option>
+                <option value="1" <?= (string)($statusFilter ?? '') === '1' ? 'selected' : '' ?>>Approved</option>
+            </select>
+            <select name="membership" class="form-select" aria-label="Filter by membership area">
+                <option value="">All Areas</option>
+                <?php foreach (($membershipOptions ?? []) as $option): ?>
+                    <option value="<?= htmlspecialchars($option) ?>" <?= ($membershipFilter ?? '') === $option ? 'selected' : '' ?>><?= htmlspecialchars($option) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <?php if (!empty($isSuperAdmin)): ?>
+                <select name="district_id" class="form-select" aria-label="Filter by district">
+                    <option value="0">All Districts</option>
+                    <?php foreach (($districts ?? []) as $district): ?>
+                        <option value="<?= (int)$district['id'] ?>" <?= (int)($districtFilter ?? 0) === (int)$district['id'] ? 'selected' : '' ?>><?= htmlspecialchars($district['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            <?php endif; ?>
+            <select name="sort" class="form-select" aria-label="Sort members">
+                <option value="newest" <?= ($sort ?? 'newest') === 'newest' ? 'selected' : '' ?>>Newest First</option>
+                <option value="oldest" <?= ($sort ?? '') === 'oldest' ? 'selected' : '' ?>>Oldest First</option>
+                <option value="name_asc" <?= ($sort ?? '') === 'name_asc' ? 'selected' : '' ?>>Name A-Z</option>
+                <option value="name_desc" <?= ($sort ?? '') === 'name_desc' ? 'selected' : '' ?>>Name Z-A</option>
+                <option value="reg_asc" <?= ($sort ?? '') === 'reg_asc' ? 'selected' : '' ?>>Reg No A-Z</option>
+                <option value="reg_desc" <?= ($sort ?? '') === 'reg_desc' ? 'selected' : '' ?>>Reg No Z-A</option>
+            </select>
+            <button class="btn btn-primary" type="submit">Apply</button>
+            <?php if (!empty($search) || ($statusFilter ?? '') !== '' || !empty($membershipFilter) || !empty($districtFilter) || ($sort ?? 'newest') !== 'newest'): ?>
                 <a href="<?= BASE_URL ?>/admin/members" class="btn btn-light">Clear</a>
             <?php endif; ?>
         </form>
@@ -33,9 +60,9 @@
                         <td class="text-secondary fw-semibold" data-label="Reg No">#<?= htmlspecialchars($mem['reg_no']) ?></td>
                         <td data-label="Name">
                             <div class="d-flex align-items-center">
-                                <?php if (!empty($mem['photo']) && file_exists(BASE_PATH . '/' . $mem['photo'])): ?>
+                                <?php if (!empty($mem['photo'])): ?>
                                     <?php $memPhoto = htmlspecialchars($mem['photo'] ?? ''); ?>
-                                    <img src="<?= BASE_URL . '/' . $memPhoto ?>" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                    <img src="<?= BASE_URL . '/' . $memPhoto ?>" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($mem['fname'].' '.$mem['lname']) ?>&background=random'">
                                 <?php else: ?>
                                     <img src="https://ui-avatars.com/api/?name=<?= urlencode($mem['fname'].' '.$mem['lname']) ?>&background=random" class="rounded-circle me-2" width="30">
                                 <?php endif; ?>

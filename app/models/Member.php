@@ -30,7 +30,7 @@ class Member {
     /**
      * Get paginated members
      */
-    public function getMembersPaginated($offset, $limit, $districtId = null, $search = '') {
+    public function getMembersPaginated($offset, $limit, $districtId = null, $search = '', $filters = [], $sort = 'newest') {
         $conditions = [];
         $params = [];
 
@@ -42,15 +42,27 @@ class Member {
             $conditions[] = "(m.reg_no LIKE :search OR m.fname LIKE :search OR m.lname LIKE :search OR CONCAT(m.fname, ' ', m.lname) LIKE :search OR m.email LIKE :search OR m.mobile LIKE :search OR m.membership LIKE :search OR d.name LIKE :search)";
             $params[':search'] = ['%' . $search . '%', PDO::PARAM_STR];
         }
+        if (($filters['status'] ?? '') !== '') {
+            $conditions[] = "m.status = :status";
+            $params[':status'] = [(int)$filters['status'], PDO::PARAM_INT];
+        }
+        if (!empty($filters['membership'])) {
+            $conditions[] = "m.membership = :membership";
+            $params[':membership'] = [$filters['membership'], PDO::PARAM_STR];
+        }
+        if (!empty($filters['district_id']) && !$districtId) {
+            $conditions[] = "m.district_id = :filter_district_id";
+            $params[':filter_district_id'] = [(int)$filters['district_id'], PDO::PARAM_INT];
+        }
 
         $where = $conditions ? "WHERE " . implode(" AND ", $conditions) : "";
-        $sql = "SELECT m.*, d.name AS district_name, a.name AS assembly_name, lb.name AS local_body_name 
+        $orderBy = $this->getMembersOrderBy($sort);
+        $sql = "SELECT m.id, m.reg_no, m.fname, m.lname, m.photo, m.membership, m.mobile, m.status, m.created_at, m.district,
+                       d.name AS district_name
                 FROM members m
                 LEFT JOIN districts d ON m.district_id = d.id
-                LEFT JOIN assemblies a ON m.assembly_id = a.id
-                LEFT JOIN local_bodies lb ON m.local_body_id = lb.id
                 $where
-                ORDER BY m.id DESC
+                ORDER BY $orderBy
                 LIMIT :offset, :limit";
         
         $stmt = $this->pdo->prepare($sql);
@@ -66,7 +78,7 @@ class Member {
     /**
      * Get total member count for pagination
      */
-    public function getTotalMemberCount($districtId = null, $search = '') {
+    public function getTotalMemberCount($districtId = null, $search = '', $filters = []) {
         $conditions = [];
         $params = [];
 
@@ -77,6 +89,18 @@ class Member {
         if ($search !== '') {
             $conditions[] = "(m.reg_no LIKE :search OR m.fname LIKE :search OR m.lname LIKE :search OR CONCAT(m.fname, ' ', m.lname) LIKE :search OR m.email LIKE :search OR m.mobile LIKE :search OR m.membership LIKE :search OR d.name LIKE :search)";
             $params[':search'] = ['%' . $search . '%', PDO::PARAM_STR];
+        }
+        if (($filters['status'] ?? '') !== '') {
+            $conditions[] = "m.status = :status";
+            $params[':status'] = [(int)$filters['status'], PDO::PARAM_INT];
+        }
+        if (!empty($filters['membership'])) {
+            $conditions[] = "m.membership = :membership";
+            $params[':membership'] = [$filters['membership'], PDO::PARAM_STR];
+        }
+        if (!empty($filters['district_id']) && !$districtId) {
+            $conditions[] = "m.district_id = :filter_district_id";
+            $params[':filter_district_id'] = [(int)$filters['district_id'], PDO::PARAM_INT];
         }
 
         $where = $conditions ? "WHERE " . implode(" AND ", $conditions) : "";
@@ -90,6 +114,36 @@ class Member {
         }
         $stmt->execute();
         return $stmt->fetchColumn();
+    }
+
+    public function getMembershipOptions($districtId = null) {
+        $sql = "SELECT DISTINCT membership FROM members WHERE membership IS NOT NULL AND membership <> ''";
+        $params = [];
+        if ($districtId) {
+            $sql .= " AND district_id = :district_id";
+            $params[':district_id'] = (int)$districtId;
+        }
+        $sql .= " ORDER BY membership ASC";
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $name => $value) {
+            $stmt->bindValue($name, $value, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    private function getMembersOrderBy($sort) {
+        $allowed = [
+            'newest' => 'm.id DESC',
+            'oldest' => 'm.id ASC',
+            'name_asc' => 'm.fname ASC, m.lname ASC, m.id DESC',
+            'name_desc' => 'm.fname DESC, m.lname DESC, m.id DESC',
+            'reg_asc' => 'm.reg_no ASC, m.id DESC',
+            'reg_desc' => 'm.reg_no DESC, m.id DESC'
+        ];
+
+        return $allowed[$sort] ?? $allowed['newest'];
     }
 
     /**

@@ -113,16 +113,35 @@ class ContentController extends Controller {
         $galleryModel = new Gallery();
         $category = $_GET['category'] ?? null;
         $search = trim($_GET['q'] ?? '');
+        $mediaTypeFilter = $_GET['media_type'] ?? '';
+        $statusFilter = $_GET['status'] ?? '1';
+        $sort = $_GET['sort'] ?? 'newest';
+        $allowedMediaTypes = ['', 'image', 'video'];
+        $allowedStatuses = ['', '0', '1'];
+        $allowedSorts = ['newest', 'oldest', 'title_asc', 'title_desc', 'category_asc'];
+        if (!in_array($mediaTypeFilter, $allowedMediaTypes, true)) {
+            $mediaTypeFilter = '';
+        }
+        if (!in_array((string)$statusFilter, $allowedStatuses, true)) {
+            $statusFilter = '1';
+        }
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'newest';
+        }
+        $filters = [
+            'media_type' => $mediaTypeFilter,
+            'status' => $statusFilter
+        ];
         $limit = 12;
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $offset = ($page - 1) * $limit;
-        $totalItems = $galleryModel->countAll($category, $search);
+        $totalItems = $galleryModel->countAll($category, $search, $filters);
         $totalPages = max(1, (int)ceil($totalItems / $limit));
         if ($page > $totalPages) {
             $page = $totalPages;
             $offset = ($page - 1) * $limit;
         }
-        $items = $galleryModel->getPaginated($category, $search, $offset, $limit);
+        $items = $galleryModel->getPaginated($category, $search, $offset, $limit, $filters, $sort);
         
         return $this->view('admin/layout', [
             'pageTitle' => 'Gallery Management',
@@ -130,6 +149,9 @@ class ContentController extends Controller {
             'items' => $items,
             'category' => $category,
             'search' => $search,
+            'mediaTypeFilter' => $mediaTypeFilter,
+            'statusFilter' => $statusFilter,
+            'sort' => $sort,
             'currentPage' => $page,
             'totalItems' => $totalItems,
             'perPage' => $limit
@@ -176,6 +198,7 @@ class ContentController extends Controller {
 
         if ($item) {
             $this->deleteGalleryFile($item['image_path'] ?? '');
+            $this->deleteGalleryThumb($item['image_path'] ?? '');
             $galleryModel->delete($id);
         }
         $this->redirect('/admin/gallery');
@@ -189,6 +212,7 @@ class ContentController extends Controller {
 
             foreach ($items as $item) {
                 $this->deleteGalleryFile($item['image_path'] ?? '');
+                $this->deleteGalleryThumb($item['image_path'] ?? '');
             }
 
             if (!empty($items)) {
@@ -224,6 +248,7 @@ class ContentController extends Controller {
                     $uploadedImage = $this->handleUpload('image');
                     if ($uploadedImage) {
                         $this->deleteGalleryFile($item['image_path'] ?? '');
+                        $this->deleteGalleryThumb($item['image_path'] ?? '');
                         $imagePath = $uploadedImage;
                     }
                 }
@@ -240,6 +265,47 @@ class ContentController extends Controller {
             }
             $this->redirect('/admin/gallery');
         }
+    }
+
+    public function galleryThumb() {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $galleryModel = new Gallery();
+        $item = $galleryModel->getById($id);
+
+        if (!$item) {
+            http_response_code(404);
+            return;
+        }
+
+        $imagePath = trim((string)($item['image_path'] ?? ''));
+        if ($imagePath === '') {
+            http_response_code(404);
+            return;
+        }
+
+        if (preg_match('#^https?://#i', $imagePath)) {
+            header('Location: ' . $imagePath, true, 302);
+            return;
+        }
+
+        $sourcePath = $this->resolveLocalGalleryPath($imagePath);
+        if (!$sourcePath) {
+            http_response_code(404);
+            return;
+        }
+
+        $thumbPath = $this->getGalleryThumbPath($sourcePath);
+        if (!is_file($thumbPath) || filemtime($thumbPath) < filemtime($sourcePath)) {
+            $this->createGalleryThumb($sourcePath, $thumbPath);
+        }
+
+        $fileToServe = is_file($thumbPath) ? $thumbPath : $sourcePath;
+        $contentType = is_file($thumbPath) ? 'image/jpeg' : (mime_content_type($sourcePath) ?: 'image/jpeg');
+
+        header('Content-Type: ' . $contentType);
+        header('Cache-Control: private, max-age=604800');
+        header('Content-Length: ' . filesize($fileToServe));
+        readfile($fileToServe);
     }
 
     private function handleUpload($fieldName) {
@@ -311,7 +377,7 @@ class ContentController extends Controller {
         $path = $parts['path'] ?? '';
         $videoId = basename($path);
 
-        return 'https://img.youtube.com/vi/' . $videoId . '/maxresdefault.jpg';
+        return 'https://img.youtube.com/vi/' . $videoId . '/hqdefault.jpg';
     }
 
     private function deleteGalleryFile($imagePath) {
@@ -320,15 +386,93 @@ class ContentController extends Controller {
             return false;
         }
 
+        $realFile = $this->resolveLocalGalleryPath($imagePath);
+        if (!$realFile) {
+            return false;
+        }
+
+        return unlink($realFile);
+    }
+
+    private function resolveLocalGalleryPath($imagePath) {
         $relativePath = ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $imagePath), DIRECTORY_SEPARATOR);
         $fullPath = BASE_PATH . DIRECTORY_SEPARATOR . $relativePath;
         $realFile = realpath($fullPath);
         $realBase = realpath(BASE_PATH);
 
         if (!$realFile || !$realBase || strpos($realFile, $realBase . DIRECTORY_SEPARATOR) !== 0 || !is_file($realFile)) {
+            return null;
+        }
+
+        return $realFile;
+    }
+
+    private function getGalleryThumbPath($sourcePath) {
+        $thumbDir = BASE_PATH . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'gallery-thumbs';
+        if (!is_dir($thumbDir)) {
+            mkdir($thumbDir, 0777, true);
+        }
+
+        return $thumbDir . DIRECTORY_SEPARATOR . sha1($sourcePath) . '.jpg';
+    }
+
+    private function createGalleryThumb($sourcePath, $thumbPath) {
+        if (!function_exists('imagecreatetruecolor')) {
             return false;
         }
 
-        return unlink($realFile);
+        $info = @getimagesize($sourcePath);
+        if (!$info) {
+            return false;
+        }
+
+        [$sourceWidth, $sourceHeight] = $info;
+        $mime = $info['mime'] ?? '';
+        $createMap = [
+            'image/jpeg' => 'imagecreatefromjpeg',
+            'image/png' => 'imagecreatefrompng',
+            'image/webp' => 'imagecreatefromwebp',
+            'image/gif' => 'imagecreatefromgif'
+        ];
+        $createFn = $createMap[$mime] ?? null;
+        if (!$createFn || !function_exists($createFn)) {
+            return false;
+        }
+
+        $source = @$createFn($sourcePath);
+        if (!$source) {
+            return false;
+        }
+
+        $targetWidth = 420;
+        $targetHeight = 240;
+        $scale = max($targetWidth / $sourceWidth, $targetHeight / $sourceHeight);
+        $cropWidth = (int)round($targetWidth / $scale);
+        $cropHeight = (int)round($targetHeight / $scale);
+        $sourceX = max(0, (int)floor(($sourceWidth - $cropWidth) / 2));
+        $sourceY = max(0, (int)floor(($sourceHeight - $cropHeight) / 2));
+
+        $thumb = imagecreatetruecolor($targetWidth, $targetHeight);
+        imagecopyresampled($thumb, $source, 0, 0, $sourceX, $sourceY, $targetWidth, $targetHeight, $cropWidth, $cropHeight);
+        $created = imagejpeg($thumb, $thumbPath, 78);
+
+        imagedestroy($source);
+        imagedestroy($thumb);
+
+        return $created;
+    }
+
+    private function deleteGalleryThumb($imagePath) {
+        if (trim((string)$imagePath) === '' || preg_match('#^https?://#i', (string)$imagePath)) {
+            return false;
+        }
+
+        $sourcePath = $this->resolveLocalGalleryPath($imagePath);
+        if (!$sourcePath) {
+            return false;
+        }
+
+        $thumbPath = $this->getGalleryThumbPath($sourcePath);
+        return is_file($thumbPath) ? unlink($thumbPath) : false;
     }
 }

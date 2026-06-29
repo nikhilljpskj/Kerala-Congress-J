@@ -81,8 +81,34 @@ class HomeController extends Controller {
 
     public function media() {
         $galleryModel = new \app\models\Gallery();
-        $gallery = $galleryModel->getAll(null, 1);
-        return $this->view('home/media', ['gallery' => $gallery]);
+        $limit = 12;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $mediaType = $_GET['type'] ?? '';
+        $allowedTypes = ['', 'image', 'video'];
+        if (!in_array($mediaType, $allowedTypes, true)) {
+            $mediaType = '';
+        }
+
+        $filters = [
+            'status' => 1,
+            'media_type' => $mediaType
+        ];
+        $offset = ($page - 1) * $limit;
+        $totalItems = $galleryModel->countAll(null, '', $filters);
+        $totalPages = max(1, (int)ceil($totalItems / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $offset = ($page - 1) * $limit;
+        }
+
+        $gallery = $galleryModel->getPaginated(null, '', $offset, $limit, $filters);
+        return $this->view('home/media', [
+            'gallery' => $gallery,
+            'mediaType' => $mediaType,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalItems' => $totalItems
+        ]);
     }
 
     public function youthfront() {

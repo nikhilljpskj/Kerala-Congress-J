@@ -71,6 +71,8 @@ function render_admin_pagination($currentPage, $totalItems, $perPage) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Kerala Congress</title>
+    <link rel="icon" href="<?= asset_url('images/logo_kc.svg') ?>" type="image/svg+xml">
+    <link rel="shortcut icon" href="<?= asset_url('images/logo_kc.svg') ?>" type="image/svg+xml">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -210,6 +212,14 @@ function render_admin_pagination($currentPage, $totalItems, $perPage) {
         .admin-search.admin-search-wide {
             grid-template-columns: minmax(240px, 1.4fr) minmax(150px, 0.8fr) minmax(150px, 0.8fr) auto auto;
             width: min(100%, 980px);
+        }
+        .members-filter-form,
+        .gallery-filter-form {
+            grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(140px, 0.8fr)) auto auto;
+            width: min(100%, 1180px);
+        }
+        .gallery-filter-form {
+            grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(140px, 0.8fr)) auto auto;
         }
         .admin-search-field {
             position: relative;

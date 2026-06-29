@@ -26,6 +26,7 @@ spl_autoload_register(function ($class) {
 
 // Load Configuration
 require CONFIG_PATH . '/database.php';
+require APP_PATH . '/helpers.php';
 
 // Initialize Router
 require APP_PATH . '/Core/Router.php';
