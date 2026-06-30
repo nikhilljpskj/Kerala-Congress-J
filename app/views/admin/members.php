@@ -44,6 +44,7 @@
         <table class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
+                    <th>Photo</th>
                     <th>Reg No</th>
                     <th>Name</th>
                     <th>Membership Area</th>
@@ -56,18 +57,23 @@
             <tbody>
                 <?php if (!empty($members)): ?>
                     <?php foreach ($members as $mem): ?>
+                    <?php
+                        $fullName = trim(($mem['fname'] ?? '') . ' ' . ($mem['lname'] ?? ''));
+                        $avatarName = $fullName !== '' ? $fullName : 'Member';
+                        $placeholderUrl = 'https://ui-avatars.com/api/?name=' . urlencode($avatarName) . '&background=e5e7eb&color=475569&bold=true';
+                    ?>
                     <tr>
+                        <td data-label="Photo">
+                            <?php if (!empty($mem['photo'])): ?>
+                                <?php $memPhoto = htmlspecialchars($mem['photo'] ?? ''); ?>
+                                <img src="<?= BASE_URL . '/' . $memPhoto ?>" class="member-table-photo" width="42" height="42" alt="<?= htmlspecialchars($avatarName) ?>" loading="lazy" onerror="this.src='<?= $placeholderUrl ?>'">
+                            <?php else: ?>
+                                <img src="<?= $placeholderUrl ?>" class="member-table-photo" width="42" height="42" alt="<?= htmlspecialchars($avatarName) ?>" loading="lazy">
+                            <?php endif; ?>
+                        </td>
                         <td class="text-secondary fw-semibold" data-label="Reg No">#<?= htmlspecialchars($mem['reg_no']) ?></td>
                         <td data-label="Name">
-                            <div class="d-flex align-items-center">
-                                <?php if (!empty($mem['photo'])): ?>
-                                    <?php $memPhoto = htmlspecialchars($mem['photo'] ?? ''); ?>
-                                    <img src="<?= BASE_URL . '/' . $memPhoto ?>" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($mem['fname'].' '.$mem['lname']) ?>&background=random'">
-                                <?php else: ?>
-                                    <img src="https://ui-avatars.com/api/?name=<?= urlencode($mem['fname'].' '.$mem['lname']) ?>&background=random" class="rounded-circle me-2" width="30">
-                                <?php endif; ?>
-                                <strong><?= htmlspecialchars($mem['fname'] . ' ' . $mem['lname']) ?></strong>
-                            </div>
+                            <strong><?= htmlspecialchars($avatarName) ?></strong>
                         </td>
                         <td data-label="Membership Area"><?= htmlspecialchars($mem['membership']) ?></td>
                         <td data-label="District"><?= htmlspecialchars($mem['district_name'] ?? $mem['district']) ?></td>
@@ -100,7 +106,7 @@
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
+                        <td colspan="8" class="text-center text-muted py-4">
                             <i class="fas fa-folder-open fa-2x mb-3 text-light"></i><br>
                             No members found.
                         </td>
@@ -117,6 +123,15 @@
     .pagination .page-link { color: #475569; background: #fff; font-weight: 500; border: 1px solid #e2e8f0; margin: 0 2px; border-radius: 4px; }
     .pagination .page-item.active .page-link { background-color: #0ea5e9; color: #fff; border-color: #0ea5e9; }
     .pagination .page-link:hover:not(.active) { background-color: #f1f5f9; }
+    .member-table-photo {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 50%;
+        display: block;
+        height: 42px;
+        object-fit: cover;
+        width: 42px;
+    }
     .member-modal .modal-dialog { --bs-modal-width: 980px; }
     .member-modal .modal-content { overflow: hidden; }
     .member-profile {
