@@ -57,7 +57,7 @@ class Member {
 
         $where = $conditions ? "WHERE " . implode(" AND ", $conditions) : "";
         $orderBy = $this->getMembersOrderBy($sort);
-        $sql = "SELECT m.id, m.reg_no, m.fname, m.lname, m.photo, m.membership, m.mobile, m.status, m.created_at, m.district,
+        $sql = "SELECT m.id, m.reg_no, m.fname, m.lname, m.photo, m.membership, m.mobile, m.status, NULL AS created_at, m.district,
                        d.name AS district_name
                 FROM members m
                 LEFT JOIN districts d ON m.district_id = d.id
