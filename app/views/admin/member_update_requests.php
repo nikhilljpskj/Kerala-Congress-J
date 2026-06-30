@@ -55,9 +55,18 @@
                             </td>
                             <td data-label="Photo">
                                 <?php if (!empty($request['requested_photo'])): ?>
-                                    <a href="<?= BASE_URL . '/' . htmlspecialchars($request['requested_photo']) ?>" target="_blank" class="request-photo-link">
-                                        <img src="<?= BASE_URL . '/' . htmlspecialchars($request['requested_photo']) ?>" alt="Requested photo" class="request-photo-thumb" loading="lazy">
-                                    </a>
+                                    <?php
+                                        $photoPath = htmlspecialchars($request['requested_photo']);
+                                        $downloadName = 'member-update-' . ($request['reg_no'] ?? $request['id']) . '-' . basename($request['requested_photo']);
+                                    ?>
+                                    <div class="request-photo-actions">
+                                        <a href="<?= BASE_URL . '/' . $photoPath ?>" target="_blank" class="request-photo-link">
+                                            <img src="<?= BASE_URL . '/' . $photoPath ?>" alt="Requested photo" class="request-photo-thumb" loading="lazy">
+                                        </a>
+                                        <a href="<?= BASE_URL . '/' . $photoPath ?>" download="<?= htmlspecialchars($downloadName) ?>" class="btn btn-sm btn-light border" title="Download uploaded file">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
                                 <?php else: ?>
                                     <span class="text-muted small">No photo</span>
                                 <?php endif; ?>
@@ -117,6 +126,11 @@
         height: 56px;
         object-fit: cover;
         width: 56px;
+    }
+    .request-photo-actions {
+        align-items: center;
+        display: flex;
+        gap: 8px;
     }
     .request-action-form {
         min-width: 170px;

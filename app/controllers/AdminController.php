@@ -311,6 +311,136 @@ class AdminController extends Controller {
         $this->redirect('/admin/members');
     }
 
+    public function editMember() {
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+        $id = $_GET['id'] ?? null;
+        $memberModel = new Member();
+        $member = $memberModel->getById($id);
+
+        if (!$member || !$this->checkMemberAccess($member)) {
+            $this->redirect('/admin/members');
+        }
+
+        $locationModel = new Location();
+        $districts = $locationModel->getDistricts();
+        $assemblies = !empty($member['district_id']) ? $locationModel->getAssemblies($member['district_id']) : [];
+        $localBodies = !empty($member['assembly_id']) ? $locationModel->getLocalBodies($member['assembly_id']) : [];
+        $canChangeDistrict = in_array('super_admin', $_SESSION['roles']) || in_array('state_admin', $_SESSION['roles']);
+
+        return $this->view('admin/layout', [
+            'pageTitle' => 'Edit Member',
+            'contentPath' => VIEWS_PATH . '/admin/member_edit.php',
+            'member' => $member,
+            'districts' => $districts,
+            'assemblies' => $assemblies,
+            'localBodies' => $localBodies,
+            'canChangeDistrict' => $canChangeDistrict
+        ]);
+    }
+
+    public function updateMember() {
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+        $id = $_POST['id'] ?? null;
+        $memberModel = new Member();
+        $member = $memberModel->getById($id);
+
+        if (!$member || !$this->checkMemberAccess($member)) {
+            $this->redirect('/admin/members');
+        }
+
+        $photoPath = $member['photo'] ?? '';
+        if (!empty($_FILES['photo']['name'])) {
+            $uploadedPhoto = $this->uploadMemberPhoto('photo');
+            if ($uploadedPhoto === false) {
+                $this->redirect('/admin/members/edit?id=' . (int)$id . '&error=photo');
+            }
+            $photoPath = $uploadedPhoto;
+        }
+
+        $isDistrictScoped = !in_array('super_admin', $_SESSION['roles']) && !in_array('state_admin', $_SESSION['roles']);
+        $districtId = empty($_POST['district_id']) ? null : (int)$_POST['district_id'];
+        if ($isDistrictScoped) {
+            $districtId = $member['district_id'] ?? null;
+        }
+        $assemblyId = empty($_POST['assembly_id']) ? null : (int)$_POST['assembly_id'];
+        $localBodyId = empty($_POST['local_body_id']) ? null : (int)$_POST['local_body_id'];
+
+        if ($isDistrictScoped && $districtId) {
+            $locationModel = new Location();
+            $allowedAssemblyIds = array_map('intval', array_column($locationModel->getAssemblies($districtId), 'id'));
+            if ($assemblyId && !in_array($assemblyId, $allowedAssemblyIds, true)) {
+                $assemblyId = $member['assembly_id'] ?? null;
+            }
+
+            if ($assemblyId) {
+                $allowedLocalBodyIds = array_map('intval', array_column($locationModel->getLocalBodies($assemblyId), 'id'));
+                if ($localBodyId && !in_array($localBodyId, $allowedLocalBodyIds, true)) {
+                    $localBodyId = $member['local_body_id'] ?? null;
+                }
+            } else {
+                $localBodyId = null;
+            }
+        }
+
+        $data = [
+            'fname' => trim($_POST['fname'] ?? ''),
+            'lname' => trim($_POST['lname'] ?? ''),
+            'membership' => trim($_POST['membership'] ?? ''),
+            'aadhaar' => trim($_POST['aadhaar'] ?? '') !== '' ? trim($_POST['aadhaar']) : 0,
+            'address' => trim($_POST['address'] ?? ''),
+            'email' => trim($_POST['email'] ?? ''),
+            'mobile' => trim($_POST['mobile'] ?? ''),
+            'dateofbirth' => trim($_POST['dateofbirth'] ?? '') !== '' ? trim($_POST['dateofbirth']) : null,
+            'fathername' => trim($_POST['fathername'] ?? ''),
+            'religion' => trim($_POST['religion'] ?? ''),
+            'caste' => trim($_POST['caste'] ?? ''),
+            'gender' => trim($_POST['gender'] ?? ''),
+            'blood' => trim($_POST['blood'] ?? ''),
+            'photo' => $photoPath,
+            'district_id' => $districtId,
+            'assembly_id' => $assemblyId,
+            'local_body_id' => $localBodyId,
+            'ward' => trim($_POST['ward'] ?? ''),
+            'president' => trim($_POST['president'] ?? ''),
+            'secretary' => trim($_POST['secretary'] ?? ''),
+            'reference' => trim($_POST['reference'] ?? ''),
+            'status' => isset($_POST['status']) ? (int)$_POST['status'] : (int)($member['status'] ?? 0)
+        ];
+
+        $memberModel->update($id, $data);
+        $this->redirect('/admin/members');
+    }
+
+    private function uploadMemberPhoto($fieldName) {
+        if (($_FILES[$fieldName]['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return false;
+        }
+
+        if (($_FILES[$fieldName]['size'] ?? 0) > 2 * 1024 * 1024) {
+            return false;
+        }
+
+        $imageInfo = @getimagesize($_FILES[$fieldName]['tmp_name']);
+        $allowedTypes = ['image/jpeg' => 'jpg', 'image/png' => 'png'];
+        if (!$imageInfo || !isset($allowedTypes[$imageInfo['mime']])) {
+            return false;
+        }
+
+        $targetDir = BASE_PATH . "/uploads/";
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = uniqid('member_', true) . '.' . $allowedTypes[$imageInfo['mime']];
+        if (!move_uploaded_file($_FILES[$fieldName]['tmp_name'], $targetDir . $fileName)) {
+            return false;
+        }
+
+        return "uploads/" . $fileName;
+    }
+
     public function memberUpdateRequests() {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }
 

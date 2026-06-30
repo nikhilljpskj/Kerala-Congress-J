@@ -88,6 +88,9 @@
                         <td data-label="Actions">
                             <div class="btn-group">
                                 <button class="btn btn-sm btn-light text-primary" onclick="showMemberDetails(<?= $mem['id'] ?>)" title="View Details"><i class="fas fa-eye"></i></button>
+                                <a href="<?= BASE_URL ?>/admin/members/edit?id=<?= $mem['id'] ?>" class="btn btn-sm btn-light text-secondary" title="Edit Member">
+                                    <i class="fas fa-pen"></i>
+                                </a>
                                 <?php if ($mem['status'] == 0): ?>
                                     <a href="<?= BASE_URL ?>/admin/members/approve?id=<?= $mem['id'] ?>" class="btn btn-sm btn-light text-success" title="Approve Member" onclick="return confirm('Approve this member?');">
                                         <i class="fas fa-check"></i>

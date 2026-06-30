@@ -186,6 +186,62 @@ class Member {
     }
 
     /**
+     * Update member details from the admin panel
+     */
+    public function update($id, $data) {
+        $sql = "UPDATE members SET
+                    fname = :fname,
+                    lname = :lname,
+                    membership = :membership,
+                    aadhaar = :aadhaar,
+                    address = :address,
+                    email = :email,
+                    mobile = :mobile,
+                    dateofbirth = :dateofbirth,
+                    fathername = :fathername,
+                    religion = :religion,
+                    caste = :caste,
+                    gender = :gender,
+                    blood = :blood,
+                    photo = :photo,
+                    district_id = :district_id,
+                    assembly_id = :assembly_id,
+                    local_body_id = :local_body_id,
+                    ward = :ward,
+                    president = :president,
+                    secretary = :secretary,
+                    reference = :reference,
+                    status = :status
+                WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            'fname' => $data['fname'],
+            'lname' => $data['lname'],
+            'membership' => $data['membership'],
+            'aadhaar' => $data['aadhaar'],
+            'address' => $data['address'],
+            'email' => $data['email'],
+            'mobile' => $data['mobile'],
+            'dateofbirth' => $data['dateofbirth'],
+            'fathername' => $data['fathername'],
+            'religion' => $data['religion'],
+            'caste' => $data['caste'],
+            'gender' => $data['gender'],
+            'blood' => $data['blood'],
+            'photo' => $data['photo'],
+            'district_id' => $data['district_id'],
+            'assembly_id' => $data['assembly_id'],
+            'local_body_id' => $data['local_body_id'],
+            'ward' => $data['ward'],
+            'president' => $data['president'],
+            'secretary' => $data['secretary'],
+            'reference' => $data['reference'],
+            'status' => $data['status'],
+            'id' => $id
+        ]);
+    }
+
+    /**
      * Reject/Delete a member
      */
     public function delete($id) {

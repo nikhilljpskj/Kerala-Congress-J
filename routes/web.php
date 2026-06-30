@@ -62,6 +62,8 @@ $router->post('/admin/gallery/bulk-delete', 'ContentController@bulkDeleteGallery
 $router->get('/admin/gallery/delete', 'ContentController@deleteGallery', ['AuthMiddleware', 'RoleMiddleware:manage_content']);
 
 $router->get('/admin/members', 'AdminController@members', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
+$router->get('/admin/members/edit', 'AdminController@editMember', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
+$router->post('/admin/members/edit', 'AdminController@updateMember', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
 $router->get('/admin/members/approve', 'AdminController@approveMember', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
 $router->get('/admin/members/id-card', 'AdminController@idCard', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
 $router->get('/admin/member-update-requests', 'AdminController@memberUpdateRequests', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
