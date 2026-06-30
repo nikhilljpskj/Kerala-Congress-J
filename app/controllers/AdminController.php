@@ -4,6 +4,7 @@ namespace app\controllers;
 
 use app\Core\Controller;
 use app\models\Member;
+use app\models\MemberUpdateRequest;
 use app\models\User;
 use app\models\Location;
 
@@ -308,6 +309,82 @@ class AdminController extends Controller {
             }
         }
         $this->redirect('/admin/members');
+    }
+
+    public function memberUpdateRequests() {
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+        $requestModel = new MemberUpdateRequest();
+        $limit = 10;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $search = trim($_GET['q'] ?? '');
+        $status = $_GET['status'] ?? '';
+        $allowedStatuses = ['', 'pending', 'approved', 'rejected'];
+        if (!in_array($status, $allowedStatuses, true)) {
+            $status = '';
+        }
+
+        $districtId = null;
+        if (!in_array('super_admin', $_SESSION['roles'])) {
+            $userModel = new User();
+            $user = $userModel->findByEmail($_SESSION['user_email']);
+            $districtId = $user['district_id'] ?? null;
+        }
+
+        $offset = ($page - 1) * $limit;
+        $totalItems = $requestModel->countAll($districtId, $search, $status);
+        $totalPages = max(1, (int)ceil($totalItems / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+            $offset = ($page - 1) * $limit;
+        }
+
+        $requests = $requestModel->getPaginated($districtId, $search, $status, $offset, $limit);
+
+        return $this->view('admin/layout', [
+            'pageTitle' => 'Member Update Requests',
+            'contentPath' => VIEWS_PATH . '/admin/member_update_requests.php',
+            'requests' => $requests,
+            'search' => $search,
+            'statusFilter' => $status,
+            'currentPage' => $page,
+            'totalItems' => $totalItems,
+            'perPage' => $limit
+        ]);
+    }
+
+    public function approveMemberUpdateRequest() {
+        $this->reviewMemberUpdateRequest('approved');
+    }
+
+    public function rejectMemberUpdateRequest() {
+        $this->reviewMemberUpdateRequest('rejected');
+    }
+
+    private function reviewMemberUpdateRequest($status) {
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+        $id = $_POST['id'] ?? null;
+        $note = trim($_POST['admin_note'] ?? '');
+        $requestModel = new MemberUpdateRequest();
+        $request = $requestModel->getById($id);
+
+        if (!$request) {
+            $this->redirect('/admin/member-update-requests');
+        }
+
+        $hasAccess = in_array('super_admin', $_SESSION['roles']);
+        if (!$hasAccess) {
+            $userModel = new User();
+            $user = $userModel->findByEmail($_SESSION['user_email']);
+            $hasAccess = $user && !empty($user['district_id']) && (int)$user['district_id'] === (int)$request['district_id'];
+        }
+
+        if ($hasAccess && in_array($status, ['approved', 'rejected'], true)) {
+            $requestModel->updateStatus($id, $status, $_SESSION['user_id'] ?? null, $note);
+        }
+
+        $this->redirect('/admin/member-update-requests');
     }
 
     public function idCard() {

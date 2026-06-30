@@ -4,6 +4,7 @@ namespace app\controllers;
 
 use app\Core\Controller;
 use config\Database;
+use app\models\MemberUpdateRequest;
 
 class HomeController extends Controller {
     
@@ -24,6 +25,110 @@ class HomeController extends Controller {
 
     public function join() {
         return $this->view('home/join');
+    }
+
+    public function editApplication() {
+        $identifier = trim($_GET['identifier'] ?? '');
+        $member = null;
+        $message = null;
+
+        if ($identifier !== '') {
+            $requestModel = new MemberUpdateRequest();
+            $member = $requestModel->findMemberByIdentifier($identifier);
+            if (!$member) {
+                $message = 'Error: No application found for the mobile number or email provided.';
+            }
+        }
+
+        return $this->view('home/edit_application', [
+            'identifier' => $identifier,
+            'member' => $member,
+            'message' => $message
+        ]);
+    }
+
+    public function storeEditApplicationRequest() {
+        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+            $this->redirect('/join/edit');
+        }
+
+        $identifier = trim($_POST['identifier'] ?? '');
+        $requestedChanges = trim($_POST['requested_changes'] ?? '');
+
+        $requestModel = new MemberUpdateRequest();
+        $member = $requestModel->findMemberByIdentifier($identifier);
+
+        if (!$member) {
+            return $this->view('home/edit_application', [
+                'identifier' => $identifier,
+                'message' => 'Error: No application found for the mobile number or email provided.'
+            ]);
+        }
+
+        if ($requestedChanges === '' && empty($_FILES['photo']['name'])) {
+            return $this->view('home/edit_application', [
+                'identifier' => $identifier,
+                'member' => $member,
+                'message' => 'Error: Please describe the details to be updated or upload a new photo.'
+            ]);
+        }
+
+        $photoPath = null;
+        if (!empty($_FILES['photo']['name'])) {
+            if (($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                return $this->view('home/edit_application', [
+                    'identifier' => $identifier,
+                    'member' => $member,
+                    'message' => 'Error: Could not upload photo. Please try again.'
+                ]);
+            }
+
+            if (($_FILES['photo']['size'] ?? 0) > 2 * 1024 * 1024) {
+                return $this->view('home/edit_application', [
+                    'identifier' => $identifier,
+                    'member' => $member,
+                    'message' => 'Error: Photo must be 2MB or smaller.'
+                ]);
+            }
+
+            $imageInfo = @getimagesize($_FILES['photo']['tmp_name']);
+            $allowedTypes = ['image/jpeg' => 'jpg', 'image/png' => 'png'];
+            if (!$imageInfo || !isset($allowedTypes[$imageInfo['mime']])) {
+                return $this->view('home/edit_application', [
+                    'identifier' => $identifier,
+                    'member' => $member,
+                    'message' => 'Error: Photo must be a JPG or PNG image.'
+                ]);
+            }
+
+            $targetDir = BASE_PATH . "/uploads/member_update_requests/";
+            if (!file_exists($targetDir)) {
+                mkdir($targetDir, 0777, true);
+            }
+
+            $fileName = uniqid('update_', true) . '.' . $allowedTypes[$imageInfo['mime']];
+            $targetPath = $targetDir . $fileName;
+            if (!move_uploaded_file($_FILES["photo"]["tmp_name"], $targetPath)) {
+                return $this->view('home/edit_application', [
+                    'identifier' => $identifier,
+                    'member' => $member,
+                    'message' => 'Error: Could not upload photo. Please try again.'
+                ]);
+            }
+            $photoPath = "uploads/member_update_requests/" . $fileName;
+        }
+
+        if ($requestModel->create($member['id'], $identifier, $requestedChanges, $photoPath)) {
+            return $this->view('home/edit_application', [
+                'message' => 'Update request submitted successfully. The admin team or district authority will review it.'
+            ]);
+        }
+
+        return $this->view('home/edit_application', [
+            'identifier' => $identifier,
+            'member' => $member,
+            'message' => 'Error: Could not submit the update request. Please try again.'
+        ]);
     }
 
     public function contact() {

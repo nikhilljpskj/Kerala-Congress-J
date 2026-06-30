@@ -367,6 +367,7 @@ function render_admin_pagination($currentPage, $totalItems, $perPage) {
             
             <?php if (can('manage_members', $roles, $permissions)): ?>
                 <a href="<?= BASE_URL ?>/admin/members" class="<?= strpos($current_uri, 'members') !== false ? 'active' : '' ?>"><i class="fas fa-user-plus"></i> Members</a>
+                <a href="<?= BASE_URL ?>/admin/member-update-requests" class="<?= strpos($current_uri, 'member-update-requests') !== false ? 'active' : '' ?>"><i class="fas fa-clipboard-list"></i> Update Requests</a>
                 <a href="<?= BASE_URL ?>/admin/contacts" class="<?= strpos($current_uri, 'contacts') !== false ? 'active' : '' ?>"><i class="fas fa-comment-dots"></i> Inquiries</a>
             <?php endif; ?>
 

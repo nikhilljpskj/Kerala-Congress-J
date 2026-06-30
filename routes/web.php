@@ -9,6 +9,8 @@
 $router->get('/', 'HomeController@index');
 $router->get('/join', 'HomeController@join');
 $router->post('/join', 'HomeController@storeMember');
+$router->get('/join/edit', 'HomeController@editApplication');
+$router->post('/join/edit/request', 'HomeController@storeEditApplicationRequest');
 $router->get('/contact', 'HomeController@contact');
 $router->get('/about', 'HomeController@about');
 $router->get('/contact', 'HomeController@contact');
@@ -62,6 +64,9 @@ $router->get('/admin/gallery/delete', 'ContentController@deleteGallery', ['AuthM
 $router->get('/admin/members', 'AdminController@members', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
 $router->get('/admin/members/approve', 'AdminController@approveMember', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
 $router->get('/admin/members/id-card', 'AdminController@idCard', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
+$router->get('/admin/member-update-requests', 'AdminController@memberUpdateRequests', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
+$router->post('/admin/member-update-requests/approve', 'AdminController@approveMemberUpdateRequest', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
+$router->post('/admin/member-update-requests/reject', 'AdminController@rejectMemberUpdateRequest', ['AuthMiddleware', 'RoleMiddleware:manage_members']);
 
 // Contact Inquiries
 $router->get('/admin/contacts', 'AdminController@contacts', ['AuthMiddleware', 'RoleMiddleware:manage_members']);

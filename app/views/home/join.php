@@ -157,6 +157,11 @@ require_once __DIR__ . '/../layout/header.php';
                             <button type="submit" class="btn-submit">
                                 <i class="fas fa-paper-plane me-2"></i> Submit Application
                             </button>
+                            <div class="mt-3">
+                                <a href="<?= BASE_URL ?>/join/edit" class="text-decoration-none fw-semibold">
+                                    <i class="fas fa-pen-to-square me-1"></i> Edit a submitted application
+                                </a>
+                            </div>
                         </div>
 
                     </form>
